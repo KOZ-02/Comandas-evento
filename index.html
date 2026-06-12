@@ -720,6 +720,75 @@
     color: var(--text2);
     font-size: 14px;
   }
+
+  /* ═══════════════════════════════════════ */
+  /* GERENCIA DASHBOARD */
+  /* ═══════════════════════════════════════ */
+  .ger-body { max-width: 560px; margin: 0 auto; padding: 20px 20px 40px; }
+  .ger-section { margin-bottom: 28px; }
+  .ger-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px; font-weight: 700;
+    color: var(--text3); text-transform: uppercase;
+    letter-spacing: .1em; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ger-title::before { content:''; width:3px; height:3px; border-radius:50%; background:linear-gradient(135deg,var(--yellow),var(--red)); }
+  .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  .stat-card {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  }
+  .stat-card.blue::before { background: linear-gradient(90deg, var(--blue), #378ADD); }
+  .stat-card.red::before  { background: linear-gradient(90deg, var(--red), #FF6B7A); }
+  .stat-card.green::before{ background: linear-gradient(90deg, var(--green), #06A77D); }
+  .stat-card.gold::before { background: linear-gradient(90deg, var(--yellow), var(--gold)); }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .stat-val { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .bar-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; flex-direction: column; gap: 5px; }
+  .bar-meta { display: flex; justify-content: space-between; font-size: 13px; }
+  .bar-name { color: var(--text2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+  .bar-count { color: var(--text); font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+  .bar-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--yellow), var(--gold)); transition: width .6s ease; }
+  .bar-fill.blue { background: linear-gradient(90deg, var(--blue), #378ADD); }
+  .modulo-split { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  .mod-card {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px;
+  }
+  .mod-name { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
+  .mod-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .mod-row:last-child { border-bottom: none; }
+  .mod-row span:first-child { color: var(--text3); }
+  .mod-row span:last-child { font-weight: 700; color: var(--text); font-family: 'Space Grotesk', sans-serif; }
+  .mod-row span:last-child.yellow { color: var(--yellow); }
+  .mod-row span:last-child.green  { color: var(--green); }
+  .mod-row span:last-child.red    { color: var(--red); }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  .status-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .status-pill { flex: 1; min-width: 80px; background: var(--bg3); border-radius: 8px; padding: 10px 8px; text-align: center; }
+  .status-pill .sp-val { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; }
+  .status-pill .sp-label { font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase; margin-top: 2px; }
+  .sp-val.yellow { color: var(--yellow); }
+  .sp-val.green  { color: var(--green); }
+  .sp-val.blue   { color: var(--blue); }
+  .tiempo-card {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .tiempo-num { font-family: 'Space Grotesk', sans-serif; font-size: 40px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+  .tiempo-info p { font-size: 14px; font-weight: 600; color: var(--text); }
+  .tiempo-info span { font-size: 12px; color: var(--text3); }
+  .url-badge { background: rgba(255,183,3,0.08); border: 1.5px dashed rgba(255,183,3,0.3); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--text3); margin-top: 6px; word-break: break-all; }
 </style>
 </head>
 <body>
@@ -742,7 +811,7 @@
     </button>
     <button class="role-btn" onclick="selectRole('prepA')">
       <div class="role-icon prep"><i class="ti ti-tools-kitchen-2"></i></div>
-      <div class="role-text"><p>Módulo A — Papas y Nachos</p><span>Ver y marcar órdenes listas</span></div>
+      <div class="role-text"><p>Módulo A — Papas y Nachis</p><span>Ver y marcar órdenes listas</span></div>
       <i class="ti ti-chevron-right" style="color:var(--text3);margin-left:auto"></i>
     </button>
     <button class="role-btn" onclick="selectRole('prepB')">
@@ -820,6 +889,91 @@
   </div>
 </div>
 
+<!-- GERENCIA -->
+<div id="screen-gerencia" class="screen">
+  <div class="topbar">
+    <div>
+      <p class="topbar-title"><span class="live-dot"></span>Dashboard Gerencia</p>
+      <p class="topbar-sub" id="ger-timestamp">Actualizando...</p>
+    </div>
+    <button class="btn btn-sm" onclick="logout()">Salir</button>
+  </div>
+  <div class="ger-body">
+
+    <div class="ger-section">
+      <p class="ger-title">Resumen general</p>
+      <div class="stat-grid">
+        <div class="stat-card blue">
+          <p class="stat-label">Total órdenes</p>
+          <p class="stat-val" id="g-total">0</p>
+          <p class="stat-sub">Ambos módulos</p>
+        </div>
+        <div class="stat-card gold">
+          <p class="stat-label">Tiempo prom.</p>
+          <p class="stat-val" id="g-tiempo">—</p>
+          <p class="stat-sub">minutos preparación</p>
+        </div>
+        <div class="stat-card red">
+          <p class="stat-label">Pendientes ahora</p>
+          <p class="stat-val" id="g-pendientes">0</p>
+          <p class="stat-sub">Sin preparar</p>
+        </div>
+        <div class="stat-card green">
+          <p class="stat-label">Entregadas</p>
+          <p class="stat-val" id="g-entregadas">0</p>
+          <p class="stat-sub">Completadas</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Estado por módulo</p>
+      <div class="modulo-split">
+        <div class="mod-card">
+          <p class="mod-name">Módulo A — Papas y Nachis</p>
+          <div class="mod-row"><span>Pendientes</span><span class="yellow" id="ga-pend">0</span></div>
+          <div class="mod-row"><span>Listas</span><span class="green" id="ga-list">0</span></div>
+          <div class="mod-row"><span>Entregadas</span><span id="ga-entr">0</span></div>
+          <div class="mod-row"><span>Total</span><span id="ga-tot">0</span></div>
+        </div>
+        <div class="mod-card">
+          <p class="mod-name">Módulo B — Perros y Batidos</p>
+          <div class="mod-row"><span>Pendientes</span><span class="yellow" id="gb-pend">0</span></div>
+          <div class="mod-row"><span>Listas</span><span class="green" id="gb-list">0</span></div>
+          <div class="mod-row"><span>Entregadas</span><span id="gb-entr">0</span></div>
+          <div class="mod-row"><span>Total</span><span id="gb-tot">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Flujo de estados (total)</p>
+      <div class="status-row">
+        <div class="status-pill"><p class="sp-val yellow" id="gs-pend">0</p><p class="sp-label">Pendiente</p></div>
+        <div class="status-pill"><p class="sp-val green" id="gs-list">0</p><p class="sp-label">Lista</p></div>
+        <div class="status-pill"><p class="sp-val blue" id="gs-entr">0</p><p class="sp-label">Entregada</p></div>
+      </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Productos más pedidos</p>
+      <div class="bar-wrap" id="g-ranking"></div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Tiempo promedio de preparación</p>
+      <div class="tiempo-card">
+        <p class="tiempo-num" id="g-tiempo2">—</p>
+        <div class="tiempo-info">
+          <p>Minutos promedio</p>
+          <span>Desde que se crea la orden hasta marcarla lista</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- FIREBASE SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -829,10 +983,14 @@
 // CONFIGURACIÓN — editar antes del evento
 // ═══════════════════════════════════════════
 const PINES = {
-  caja:  '2424',
-  prepA: '0707',
-  prepB: '9191',
+  caja:  '1234',
+  prepA: '5678',
+  prepB: '9012',
 };
+
+// URL secreta de gerencia: agrega ?gerencia=TU_CLAVE a la URL
+// Ej: https://koz-02.github.io/Comandas-evento/?gerencia=alpina2026
+const GERENCIA_KEY = 'alpina2026';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD5yiwqiPkEBQlzUv1jBA9F-4ZQwQmS8yk",
@@ -871,6 +1029,16 @@ let currentFilter = 'pendiente';
 let currentPrepArea = null;
 let ordenesListener = null;
 let todasOrdenes = {};
+let gerenciaListenerA = null;
+let gerenciaListenerB = null;
+
+// Detectar acceso por URL secreta de gerencia
+(function checkGerenciaURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('gerencia') === GERENCIA_KEY) {
+    initGerencia();
+  }
+})();
 
 // ── UTILIDADES ──
 function showToast(msg, ok=true) {
@@ -1101,6 +1269,128 @@ function renderOrdenes() {
 function cambiarStatus(key, newStatus) {
   db.ref(`ordenes/${currentPrepArea}/${key}/status`).set(newStatus)
     .catch(() => showToast('Error al actualizar. Revisa conexión.', false));
+}
+
+// ═══════════════════════════════════════════
+// GERENCIA
+// ═══════════════════════════════════════════
+function initGerencia() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-gerencia').classList.add('active');
+  window.scrollTo(0,0);
+
+  if (gerenciaListenerA) { gerenciaListenerA(); gerenciaListenerA = null; }
+  if (gerenciaListenerB) { gerenciaListenerB(); gerenciaListenerB = null; }
+
+  let dataA = {}, dataB = {};
+
+  gerenciaListenerA = db.ref('ordenes/A').on('value', snap => {
+    dataA = snap.val() || {};
+    renderDashboard(dataA, dataB);
+  });
+  gerenciaListenerB = db.ref('ordenes/B').on('value', snap => {
+    dataB = snap.val() || {};
+    renderDashboard(dataA, dataB);
+  });
+}
+
+function renderDashboard(dataA, dataB) {
+  const allA = Object.values(dataA);
+  const allB = Object.values(dataB);
+
+  const pendA = allA.filter(o => o.status === 'pendiente').length;
+  const listA = allA.filter(o => o.status === 'lista').length;
+  const entrA = allA.filter(o => o.status === 'entregada').length;
+  const pendB = allB.filter(o => o.status === 'pendiente').length;
+  const listB = allB.filter(o => o.status === 'lista').length;
+  const entrB = allB.filter(o => o.status === 'entregada').length;
+
+  const totalPend = pendA + pendB;
+  const totalList = listA + listB;
+  const totalEntr = entrA + entrB;
+  const total     = allA.length + allB.length;
+
+  // Deduplicar órdenes con mismo numComanda (bebidas AB van a los dos módulos)
+  const allCombined = [...allA, ...allB];
+  const seen = new Set();
+  const unique = allCombined.filter(o => {
+    if (seen.has(o.numComanda)) return false;
+    seen.add(o.numComanda); return true;
+  });
+  const totalUnico = unique.length;
+
+  // Stats generales
+  setText('g-total',      totalUnico);
+  setText('g-pendientes', totalPend);
+  setText('g-entregadas', totalEntr);
+  setText('gs-pend', totalPend);
+  setText('gs-list', totalList);
+  setText('gs-entr', totalEntr);
+
+  // Por módulo
+  setText('ga-pend', pendA); setText('ga-list', listA);
+  setText('ga-entr', entrA); setText('ga-tot',  allA.length);
+  setText('gb-pend', pendB); setText('gb-list', listB);
+  setText('gb-entr', entrB); setText('gb-tot',  allB.length);
+
+  // Tiempo promedio (órdenes con status lista o entregada que tienen timestamp)
+  const conTiempo = allCombined.filter(o =>
+    (o.status === 'lista' || o.status === 'entregada') && o.timestamp && o.readyAt
+  );
+  let tiempoStr = '—';
+  if (conTiempo.length > 0) {
+    const avg = conTiempo.reduce((s, o) => s + (o.readyAt - o.timestamp), 0) / conTiempo.length;
+    tiempoStr = Math.round(avg / 60000) + ' min';
+  } else {
+    // Estimado basado en órdenes entregadas vs timestamp
+    const entregadas = allCombined.filter(o => o.status === 'entregada' && o.timestamp);
+    if (entregadas.length > 0) {
+      const now = Date.now();
+      const avgMins = Math.round(
+        entregadas.reduce((s, o) => s + Math.min((now - o.timestamp) / 60000, 30), 0) / entregadas.length
+      );
+      tiempoStr = '~' + avgMins + ' min';
+    }
+  }
+  setText('g-tiempo',  tiempoStr);
+  setText('g-tiempo2', tiempoStr);
+
+  // Ranking de productos
+  const conteo = {};
+  allCombined.forEach(o => {
+    (o.items || []).forEach(item => {
+      conteo[item.nombre] = (conteo[item.nombre] || 0) + (item.qty || 1);
+    });
+  });
+  const ranking = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  const maxVal = ranking.length ? ranking[0][1] : 1;
+  const wrap = document.getElementById('g-ranking');
+  if (ranking.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--text3);font-size:13px">Sin datos aún</p>';
+  } else {
+    wrap.innerHTML = ranking.map(([nombre, qty], i) => `
+      <div class="bar-row">
+        <div class="bar-meta">
+          <span class="bar-name">${nombre}</span>
+          <span class="bar-count">${qty}</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill${i < 3 ? '' : ' blue'}" style="width:${Math.round((qty/maxVal)*100)}%"></div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Timestamp
+  const now = new Date();
+  const h = now.getHours().toString().padStart(2,'0');
+  const m = now.getMinutes().toString().padStart(2,'0');
+  const s = now.getSeconds().toString().padStart(2,'0');
+  setText('ger-timestamp', `Última actualización: ${h}:${m}:${s}`);
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
 }
 </script>
 </body>
