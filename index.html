@@ -22,8 +22,8 @@
     --bg2: #141829;
     --bg3: #1E2139;
     --text: #FFFFFF;
-    --text2: #B8C5D6;
-    --text3: #7A8BA0;
+    --text2: #D8E5F6;
+    --text3: #9EB5CC;
     --border: rgba(255,255,255,0.08);
     --border2: rgba(255,255,255,0.15);
     
@@ -344,7 +344,7 @@
     font-family: 'Space Grotesk', sans-serif;
     font-size: 12px;
     font-weight: 700;
-    color: var(--text);
+    color: #FFD060;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin: 24px 0 12px;
@@ -405,7 +405,7 @@
     font-size: 13px;
     font-weight: 700;
     font-family: 'Space Grotesk', sans-serif;
-    color: var(--text3);
+    color: #C8D8E8;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
@@ -453,7 +453,7 @@
   
   .item-area {
     font-size: 11px;
-    color: var(--text3);
+    color: #FFB703;
     flex-shrink: 0;
     font-weight: 700;
     text-transform: uppercase;
@@ -811,12 +811,12 @@
     </button>
     <button class="role-btn" onclick="selectRole('prepA')">
       <div class="role-icon prep"><i class="ti ti-tools-kitchen-2"></i></div>
-      <div class="role-text"><p>Módulo A — Papas y Nachos</p><span>Ver y marcar órdenes listas</span></div>
+      <div class="role-text"><p>Módulo A — Papas y Nachis</p><span>Ver y gestionar órdenes</span></div>
       <i class="ti ti-chevron-right" style="color:var(--text3);margin-left:auto"></i>
     </button>
     <button class="role-btn" onclick="selectRole('prepB')">
       <div class="role-icon prep"><i class="ti ti-tools-kitchen-2"></i></div>
-      <div class="role-text"><p>Módulo B — Perros y Batidos</p><span>Ver y marcar órdenes listas</span></div>
+      <div class="role-text"><p>Módulo B — Perros y Batidos</p><span>Ver y gestionar órdenes</span></div>
       <i class="ti ti-chevron-right" style="color:var(--text3);margin-left:auto"></i>
     </button>
     <div class="pin-wrap" id="pin-section">
@@ -869,7 +869,7 @@
   <div class="topbar">
     <div>
       <p class="topbar-title" id="prep-title">Módulo A</p>
-      <p class="topbar-sub" id="prep-sub">Papas y Nachos</p>
+      <p class="topbar-sub" id="prep-sub">Papas y Nachis</p>
     </div>
     <button class="btn btn-sm" onclick="logout()">Salir</button>
   </div>
@@ -879,12 +879,12 @@
         Pendientes <span class="cnt-badge" id="cnt-pendiente">0</span>
       </button>
       <button class="cat-tab" onclick="filtrarOrdenes('lista',this)">
-        Listas <span class="cnt-badge green" id="cnt-lista">0</span>
+        En preparación <span class="cnt-badge green" id="cnt-lista">0</span>
       </button>
       <button class="cat-tab" onclick="filtrarOrdenes('entregada',this)">Entregadas</button>
     </div>
     <div id="ordenes-list">
-      <div class="loading-msg"><i class="ti ti-loader-2"></i> Conectando a Firebase....</div>
+      <div class="loading-msg"><i class="ti ti-loader-2"></i> Conectando a Firebase...</div>
     </div>
   </div>
 </div>
@@ -906,12 +906,12 @@
         <div class="stat-card blue">
           <p class="stat-label">Total órdenes</p>
           <p class="stat-val" id="g-total">0</p>
-          <p class="stat-sub">Ambos módulos</p>
+          <p class="stat-sub">Únicas (sin duplicar)</p>
         </div>
         <div class="stat-card gold">
-          <p class="stat-label">Tiempo prom.</p>
+          <p class="stat-label">Tiempo prom. entrega</p>
           <p class="stat-val" id="g-tiempo">—</p>
-          <p class="stat-sub">minutos preparación</p>
+          <p class="stat-sub">Creación → entregada</p>
         </div>
         <div class="stat-card red">
           <p class="stat-label">Pendientes ahora</p>
@@ -927,31 +927,31 @@
     </div>
 
     <div class="ger-section">
-      <p class="ger-title">Estado por módulo</p>
+      <p class="ger-title">Flujo de estados — total ambos módulos</p>
+      <div class="status-row">
+        <div class="status-pill"><p class="sp-val yellow" id="gs-pend">0</p><p class="sp-label">Pendiente</p></div>
+        <div class="status-pill"><p class="sp-val green" id="gs-list">0</p><p class="sp-label">En prep.</p></div>
+        <div class="status-pill"><p class="sp-val blue" id="gs-entr">0</p><p class="sp-label">Entregada</p></div>
+      </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Órdenes por módulo</p>
       <div class="modulo-split">
         <div class="mod-card">
-          <p class="mod-name">Módulo A — Papas y Nachos</p>
+          <p class="mod-name">Módulo A — Papas y Nachis</p>
           <div class="mod-row"><span>Pendientes</span><span class="yellow" id="ga-pend">0</span></div>
-          <div class="mod-row"><span>Listas</span><span class="green" id="ga-list">0</span></div>
+          <div class="mod-row"><span>En preparación</span><span class="green" id="ga-list">0</span></div>
           <div class="mod-row"><span>Entregadas</span><span id="ga-entr">0</span></div>
           <div class="mod-row"><span>Total</span><span id="ga-tot">0</span></div>
         </div>
         <div class="mod-card">
           <p class="mod-name">Módulo B — Perros y Batidos</p>
           <div class="mod-row"><span>Pendientes</span><span class="yellow" id="gb-pend">0</span></div>
-          <div class="mod-row"><span>Listas</span><span class="green" id="gb-list">0</span></div>
+          <div class="mod-row"><span>En preparación</span><span class="green" id="gb-list">0</span></div>
           <div class="mod-row"><span>Entregadas</span><span id="gb-entr">0</span></div>
           <div class="mod-row"><span>Total</span><span id="gb-tot">0</span></div>
         </div>
-      </div>
-    </div>
-
-    <div class="ger-section">
-      <p class="ger-title">Flujo de estados (total)</p>
-      <div class="status-row">
-        <div class="status-pill"><p class="sp-val yellow" id="gs-pend">0</p><p class="sp-label">Pendiente</p></div>
-        <div class="status-pill"><p class="sp-val green" id="gs-list">0</p><p class="sp-label">Lista</p></div>
-        <div class="status-pill"><p class="sp-val blue" id="gs-entr">0</p><p class="sp-label">Entregada</p></div>
       </div>
     </div>
 
@@ -961,12 +961,12 @@
     </div>
 
     <div class="ger-section">
-      <p class="ger-title">Tiempo promedio de preparación</p>
+      <p class="ger-title">Tiempo promedio de ciclo completo</p>
       <div class="tiempo-card">
         <p class="tiempo-num" id="g-tiempo2">—</p>
         <div class="tiempo-info">
           <p>Minutos promedio</p>
-          <span>Desde que se crea la orden hasta marcarla lista</span>
+          <span>Desde que se crea la orden hasta que se marca como entregada</span>
         </div>
       </div>
     </div>
@@ -983,9 +983,9 @@
 // CONFIGURACIÓN — editar antes del evento
 // ═══════════════════════════════════════════
 const PINES = {
-  caja:  '2424',
-  prepA: '0707',
-  prepB: '9191',
+  caja:  '1234',
+  prepA: '5678',
+  prepB: '9012',
 };
 
 // URL secreta de gerencia: agrega ?gerencia=TU_CLAVE a la URL
@@ -1011,9 +1011,9 @@ const MENU = [
   { id:'pa1', nombre:'Papas carne mundial',   area:'A',  cat:'Papas'   },
   { id:'pa2', nombre:'Papas sencillas',       area:'A',  cat:'Papas'   },
   { id:'pa3', nombre:'Papas tocineta',        area:'A',  cat:'Papas'   },
-  { id:'na1', nombre:'Nachos carne',          area:'A',  cat:'Nachos'  },
-  { id:'na2', nombre:'Nachos pollo',          area:'A',  cat:'Nachos'  },
-  { id:'na3', nombre:'Nachos sencillos',      area:'A',  cat:'Nachos'  },
+  { id:'na1', nombre:'Nachos carne',          area:'A',  cat:'Nachis'  },
+  { id:'na2', nombre:'Nachos pollo',          area:'A',  cat:'Nachis'  },
+  { id:'na3', nombre:'Nachos sencillos',      area:'A',  cat:'Nachis'  },
   { id:'pb1', nombre:'Perro Sloppy Joe',      area:'B',  cat:'Perros'  },
   { id:'pb2', nombre:'Perro Mexicano',        area:'B',  cat:'Perros'  },
   { id:'pb3', nombre:'Choripán',              area:'B',  cat:'Perros'  },
@@ -1034,6 +1034,18 @@ let ordenesListener = null;
 let todasOrdenes = {};
 let gerenciaListenerA = null;
 let gerenciaListenerB = null;
+let _localCounter = null;
+
+// Cargar contador desde Firebase al inicio
+db.ref('contador_comandas').once('value').then(snap => {
+  _localCounter = (snap.val() || 0);
+}).catch(() => { _localCounter = 0; });
+
+function getNextNum() {
+  _localCounter = (_localCounter || 0) + 1;
+  db.ref('contador_comandas').set(_localCounter).catch(() => {});
+  return _localCounter;
+}
 
 // Detectar acceso por URL secreta de gerencia
 (function checkGerenciaURL() {
@@ -1183,11 +1195,8 @@ function enviarComanda() {
     if (item.area === 'B' || item.area === 'AB') itemsB.push(entry);
   });
 
-  // Número único: timestamp en base36 + 2 chars aleatorios = ej: "K7F-3X"
-  // Legible, corto, prácticamente imposible de repetir con 3 cajas simultáneas
-  const ts = Date.now().toString(36).slice(-4).toUpperCase();
-  const rand = Math.random().toString(36).slice(2,4).toUpperCase();
-  const numComanda = ts + '-' + rand;
+  // Consecutivo 1, 2, 3... sincronizado con Firebase
+  const numComanda = getNextNum();
 
   const base = { cliente, nota, timestamp: Date.now(), numComanda, status: 'pendiente', _k: APP_SECRET };
   const writes = [];
@@ -1236,7 +1245,7 @@ function renderOrdenes() {
 
   const wrap = document.getElementById('ordenes-list');
   if (filtered.length === 0) {
-    const labels = { pendiente:'pendientes', lista:'listas', entregada:'entregadas' };
+    const labels = { pendiente:'pendientes', lista:'en preparación', entregada:'entregadas' };
     wrap.innerHTML = `<div class="empty-state"><i class="ti ti-circle-check"></i><p>Sin órdenes ${labels[currentFilter]}</p></div>`;
     return;
   }
@@ -1253,7 +1262,7 @@ function renderOrdenes() {
     let actions = '';
     if (currentFilter === 'pendiente') {
       actions = `<button class="btn btn-success btn-sm" onclick="cambiarStatus('${o.key}','lista')">
-        <i class="ti ti-check"></i> Marcar lista
+        <i class="ti ti-chef-hat"></i> En preparación
       </button>`;
     } else if (currentFilter === 'lista') {
       actions = `
@@ -1345,21 +1354,20 @@ function renderDashboard(dataA, dataB) {
   setText('gb-pend', pendB); setText('gb-list', listB);
   setText('gb-entr', entrB); setText('gb-tot',  allB.length);
 
-  // Tiempo promedio (órdenes con status lista o entregada que tienen timestamp)
-  const conTiempo = allCombined.filter(o =>
-    (o.status === 'lista' || o.status === 'entregada') && o.timestamp && o.readyAt
-  );
+  // Tiempo promedio ciclo completo: creación → entregada
+  // Usamos deliveredAt si existe, si no estimamos con timestamp de órdenes entregadas
+  const entregadas = allCombined.filter(o => o.status === 'entregada' && o.timestamp);
   let tiempoStr = '—';
-  if (conTiempo.length > 0) {
-    const avg = conTiempo.reduce((s, o) => s + (o.readyAt - o.timestamp), 0) / conTiempo.length;
-    tiempoStr = Math.round(avg / 60000) + ' min';
-  } else {
-    // Estimado basado en órdenes entregadas vs timestamp
-    const entregadas = allCombined.filter(o => o.status === 'entregada' && o.timestamp);
-    if (entregadas.length > 0) {
+  if (entregadas.length > 0) {
+    const withDelivery = entregadas.filter(o => o.deliveredAt);
+    if (withDelivery.length > 0) {
+      const avg = withDelivery.reduce((s,o) => s + (o.deliveredAt - o.timestamp), 0) / withDelivery.length;
+      tiempoStr = Math.round(avg / 60000) + ' min';
+    } else {
+      // Estimado: tiempo transcurrido desde creación (cap 45min)
       const now = Date.now();
       const avgMins = Math.round(
-        entregadas.reduce((s, o) => s + Math.min((now - o.timestamp) / 60000, 30), 0) / entregadas.length
+        entregadas.reduce((s,o) => s + Math.min((now - o.timestamp) / 60000, 45), 0) / entregadas.length
       );
       tiempoStr = '~' + avgMins + ' min';
     }
