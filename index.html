@@ -811,7 +811,7 @@
     </button>
     <button class="role-btn" onclick="selectRole('prepA')">
       <div class="role-icon prep"><i class="ti ti-tools-kitchen-2"></i></div>
-      <div class="role-text"><p>Módulo A — Papas y Nachis</p><span>Ver y marcar órdenes listas</span></div>
+      <div class="role-text"><p>Módulo A — Papas y Nachos</p><span>Ver y marcar órdenes listas</span></div>
       <i class="ti ti-chevron-right" style="color:var(--text3);margin-left:auto"></i>
     </button>
     <button class="role-btn" onclick="selectRole('prepB')">
@@ -983,14 +983,17 @@
 // CONFIGURACIÓN — editar antes del evento
 // ═══════════════════════════════════════════
 const PINES = {
-  caja:  '1234',
-  prepA: '5678',
-  prepB: '9012',
+  caja:  '2424',
+  prepA: '0707',
+  prepB: '9191',
 };
 
 // URL secreta de gerencia: agrega ?gerencia=TU_CLAVE a la URL
 // Ej: https://koz-02.github.io/Comandas-evento/?gerencia=alpina2026
 const GERENCIA_KEY = 'alpina2026';
+
+// Clave interna de app — Firebase la valida en cada escritura
+const APP_SECRET = 'cmd_alpina_2026';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD5yiwqiPkEBQlzUv1jBA9F-4ZQwQmS8yk",
@@ -1174,20 +1177,32 @@ function enviarComanda() {
   const itemsA = [], itemsB = [];
   keys.forEach(id => {
     const item  = MENU.find(i => i.id === id);
-    const entry = { nombre: item.nombre, qty: cart[id] };
+    const esBebidaCompartida = item.area === 'AB';
+    const entry = { nombre: item.nombre, qty: cart[id], compartida: esBebidaCompartida };
     if (item.area === 'A' || item.area === 'AB') itemsA.push(entry);
     if (item.area === 'B' || item.area === 'AB') itemsB.push(entry);
   });
 
-  const numComanda = Math.floor(Math.random()*900)+100;
-  const base = { cliente, nota, timestamp: Date.now(), numComanda, status: 'pendiente' };
-  const writes = [];
-  if (itemsA.length) writes.push(db.ref('ordenes/A').push({ ...base, items: itemsA }));
-  if (itemsB.length) writes.push(db.ref('ordenes/B').push({ ...base, items: itemsB }));
+  // Consecutivo absoluto atomico — Firebase garantiza que nunca se repite
+  // aunque haya 3 cajas enviando al mismo tiempo
+  const contadorRef = db.ref('contador_comandas');
+  contadorRef.transaction(actual => {
+    return (actual || 0) + 1;
+  }).then(result => {
+    if (!result.committed) {
+      showToast('Error al generar número de comanda', false);
+      return;
+    }
+    const numComanda = result.snapshot.val();
+    const base = { cliente, nota, timestamp: Date.now(), numComanda, status: 'pendiente', _k: APP_SECRET };
+    const writes = [];
+    if (itemsA.length) writes.push(db.ref('ordenes/A').push({ ...base, items: itemsA }));
+    if (itemsB.length) writes.push(db.ref('ordenes/B').push({ ...base, items: itemsB }));
 
-  Promise.all(writes)
-    .then(() => { showToast(`✓ Comanda #${numComanda} enviada`); clearOrder(); })
-    .catch(() => showToast('Error al enviar. Revisa conexión.', false));
+    Promise.all(writes)
+      .then(() => { showToast(`✓ Comanda #${numComanda} enviada`); clearOrder(); })
+      .catch(() => showToast('Error al enviar. Revisa conexión.', false));
+  }).catch(() => showToast('Error al enviar. Revisa conexión.', false));
 }
 
 // ── PREPARACIÓN ──
@@ -1236,7 +1251,10 @@ function renderOrdenes() {
     const mins    = Math.floor((Date.now() - o.timestamp) / 60000);
     const urgente = currentFilter === 'pendiente' && mins >= 10;
     const timeStr = mins < 1 ? 'ahora mismo' : `hace ${mins} min`;
-    const itemsHtml = (o.items||[]).map(i => `<strong>x${i.qty}</strong> ${i.nombre}`).join('<br>');
+    const itemsHtml = (o.items||[]).map(i => {
+      const tag = i.compartida ? `<span style="font-size:10px;background:rgba(255,183,3,0.18);color:#FFB703;padding:1px 6px;border-radius:4px;margin-left:4px;font-weight:700">AMBOS MÓDULOS</span>` : '';
+      return `<strong>x${i.qty}</strong> ${i.nombre}${tag}`;
+    }).join('<br>');
 
     let actions = '';
     if (currentFilter === 'pendiente') {
