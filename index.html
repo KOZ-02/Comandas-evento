@@ -1212,7 +1212,7 @@ function enviarComanda() {
 function initPrep(role) {
   currentPrepArea = role === 'prepA' ? 'A' : 'B';
   document.getElementById('prep-title').textContent = `Módulo ${currentPrepArea}`;
-  document.getElementById('prep-sub').textContent   = currentPrepArea === 'A' ? 'Papas y Nachis' : 'Perros y Batidos';
+  document.getElementById('prep-sub').textContent   = currentPrepArea === 'A' ? 'Papas y Nachos' : 'Perros y Batidos';
   currentFilter = 'pendiente';
   document.querySelectorAll('.filter-row .cat-tab').forEach((b,i) => b.classList.toggle('active', i===0));
   show('screen-prep');
