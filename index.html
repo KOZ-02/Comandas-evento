@@ -714,6 +714,33 @@
   
   .toast.show { opacity: 1; }
   
+  /* VENTAS */
+  .venta-hero {
+    background: linear-gradient(135deg, #0d2a0d, #1a3d0a);
+    border: 1.5px solid #3B6D11;
+    border-radius: var(--radius-lg); padding: 20px;
+    text-align: center; margin-bottom: 10px;
+  }
+  .venta-hero-label { font-size: 11px; font-weight: 700; color: #639922; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
+  .venta-hero-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 38px; font-weight: 700;
+    background: linear-gradient(135deg, #A8F04D, #06A77D);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .venta-hero-sub { font-size: 12px; color: #7A8BA0; margin-top: 4px; }
+  .venta-split { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-bottom: 10px; }
+  .venta-mini {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px; text-align: center;
+  }
+  .venta-mini-label { font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .venta-mini-val { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); }
+  .venta-mini-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .ticket-prom { background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .ticket-prom-label { font-size: 13px; color: var(--text2); }
+  .ticket-prom-val { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #FFB703; }
+
   /* POPUP MÓDULO BEBIDAS */
   .popup-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.75);
@@ -949,6 +976,36 @@
   <div class="ger-body">
 
     <div class="ger-section">
+      <p class="ger-title">Ventas estimadas</p>
+      <div class="venta-hero">
+        <p class="venta-hero-label">Venta total estimada</p>
+        <p class="venta-hero-val" id="g-venta-total">$0</p>
+        <p class="venta-hero-sub">Suma de todos los ítems despachados</p>
+      </div>
+      <div class="venta-split">
+        <div class="venta-mini">
+          <p class="venta-mini-label">Módulo A</p>
+          <p class="venta-mini-val" id="g-venta-a">$0</p>
+          <p class="venta-mini-sub">Papas y Nachos</p>
+        </div>
+        <div class="venta-mini">
+          <p class="venta-mini-label">Módulo B</p>
+          <p class="venta-mini-val" id="g-venta-b">$0</p>
+          <p class="venta-mini-sub">Perros y Batidos</p>
+        </div>
+      </div>
+      <div class="ticket-prom">
+        <span class="ticket-prom-label">Ticket promedio por orden</span>
+        <span class="ticket-prom-val" id="g-ticket-prom">$0</span>
+      </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Producto más rentable</p>
+      <div class="bar-wrap" id="g-ranking-ventas"></div>
+    </div>
+
+    <div class="ger-section">
       <p class="ger-title">Resumen general</p>
       <div class="stat-grid">
         <div class="stat-card blue">
@@ -1101,21 +1158,22 @@ const firebaseConfig = {
 };
 
 const MENU = [
-  { id:'cc0', nombre:'Coca Cola Zero 10oz',  area:'AB', cat:'Bebidas' },
-  { id:'cc1', nombre:'Coca Cola 10oz',        area:'AB', cat:'Bebidas' },
-  { id:'pa1', nombre:'Papas carne mundial',   area:'A',  cat:'Papas'   },
-  { id:'pa2', nombre:'Papas sencillas',       area:'A',  cat:'Papas'   },
-  { id:'pa3', nombre:'Papas tocineta',        area:'A',  cat:'Papas'   },
-  { id:'na1', nombre:'Nachos carne',          area:'A',  cat:'Nachos'  },
-  { id:'na2', nombre:'Nachos pollo',          area:'A',  cat:'Nachos'  },
-  { id:'na3', nombre:'Nachos sencillos',      area:'A',  cat:'Nachos'  },
-  { id:'pb1', nombre:'Perro Sloppy Joe',      area:'B',  cat:'Perros'  },
-  { id:'pb2', nombre:'Perro Mexicano',        area:'B',  cat:'Perros'  },
-  { id:'pb3', nombre:'Choripán',              area:'B',  cat:'Perros'  },
-  { id:'ba1', nombre:'Batido Yox Fresa',      area:'B',  cat:'Batidos' },
-  { id:'ba2', nombre:'Batido Yox Piña',       area:'B',  cat:'Batidos' },
-  { id:'ba3', nombre:'Batido Yox Mango',      area:'B',  cat:'Batidos' },
+  { id:'cc0', nombre:'Coca Cola Zero 10oz',  area:'AB', cat:'Bebidas', precio:5200    },
+  { id:'cc1', nombre:'Coca Cola 10oz',        area:'AB', cat:'Bebidas', precio:5200    },
+  { id:'pa1', nombre:'Papas carne mundial',   area:'A',  cat:'Papas',   precio:32900   },
+  { id:'pa2', nombre:'Papas sencillas',       area:'A',  cat:'Papas',   precio:25000   },
+  { id:'pa3', nombre:'Papas tocineta',        area:'A',  cat:'Papas',   precio:32900   },
+  { id:'na1', nombre:'Nachos carne',          area:'A',  cat:'Nachos',  precio:38900   },
+  { id:'na2', nombre:'Nachos pollo',          area:'A',  cat:'Nachos',  precio:38900   },
+  { id:'na3', nombre:'Nachos sencillos',      area:'A',  cat:'Nachos',  precio:30000   },
+  { id:'pb1', nombre:'Perro Sloppy Joe',      area:'B',  cat:'Perros',  precio:30000   },
+  { id:'pb2', nombre:'Perro Mexicano',        area:'B',  cat:'Perros',  precio:32000   },
+  { id:'pb3', nombre:'Choripán',              area:'B',  cat:'Perros',  precio:33000   },
+  { id:'ba1', nombre:'Batido Yox Fresa',      area:'B',  cat:'Batidos', precio:9900    },
+  { id:'ba2', nombre:'Batido Yox Piña',       area:'B',  cat:'Batidos', precio:9900    },
+  { id:'ba3', nombre:'Batido Yox Mango',      area:'B',  cat:'Batidos', precio:9900    },
 ];
+
 // ═══════════════════════════════════════════
 
 firebase.initializeApp(firebaseConfig);
@@ -1459,6 +1517,17 @@ function initGerencia() {
   });
 }
 
+function formatCOP(val) {
+  return '$' + Math.round(val).toLocaleString('es-CO');
+}
+
+function calcVentaOrden(items) {
+  return (items || []).reduce((s, item) => {
+    const menuItem = MENU.find(m => m.nombre === item.nombre);
+    return s + (menuItem ? menuItem.precio * (item.qty || 1) : 0);
+  }, 0);
+}
+
 function tiempoProm(ordenes) {
   const now = Date.now();
   const con = ordenes.filter(o => o.timestamp);
@@ -1604,6 +1673,50 @@ function renderDashboard(dataA, dataB) {
           <div class="bar-fill blue" style="width:${Math.round((mins/maxT)*100)}%"></div>
         </div>
       </div>`).join('');
+
+  // ── VENTAS ──
+  // Calcular sobre órdenes entregadas + en prep (ya están en producción)
+  const ordenesConValor = allCombined.filter(o => o.items);
+  let ventaA = 0, ventaB = 0;
+  allA.forEach(o => { ventaA += calcVentaOrden(o.items); });
+  allB.forEach(o => { ventaB += calcVentaOrden(o.items); });
+  const ventaTotal = ventaA + ventaB;
+
+  // Deduplicar para ticket promedio (bebidas van a un solo módulo ya)
+  const ventaUnica = unique.reduce((s, o) => s + calcVentaOrden(o.items), 0);
+  const ticketProm = unique.length > 0 ? ventaUnica / unique.length : 0;
+
+  setText('g-venta-total', formatCOP(ventaTotal));
+  setText('g-venta-a',     formatCOP(ventaA));
+  setText('g-venta-b',     formatCOP(ventaB));
+  setText('g-ticket-prom', formatCOP(ticketProm));
+
+  // Ranking por venta (no por cantidad)
+  const ventaPorArt = {};
+  allCombined.forEach(o => {
+    (o.items||[]).forEach(item => {
+      const menuItem = MENU.find(m => m.nombre === item.nombre);
+      if (!menuItem || !menuItem.precio) return;
+      ventaPorArt[item.nombre] = (ventaPorArt[item.nombre]||0) + menuItem.precio * (item.qty||1);
+    });
+  });
+  const rankingVentas = Object.entries(ventaPorArt).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const maxVenta = rankingVentas.length ? rankingVentas[0][1] : 1;
+  const wrapV = document.getElementById('g-ranking-ventas');
+  if (wrapV) {
+    wrapV.innerHTML = rankingVentas.length === 0
+      ? '<p style="color:var(--text3);font-size:13px">Sin datos aún</p>'
+      : rankingVentas.map(([nombre, venta]) => `
+        <div class="bar-row">
+          <div class="bar-meta">
+            <span class="bar-name">${nombre}</span>
+            <span class="bar-count">${formatCOP(venta)}</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${Math.round((venta/maxVenta)*100)}%"></div>
+          </div>
+        </div>`).join('');
+  }
 
   // Timestamp
   const hn = new Date();
