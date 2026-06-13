@@ -714,6 +714,54 @@
   
   .toast.show { opacity: 1; }
   
+  /* POPUP MÓDULO BEBIDAS */
+  .popup-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .popup-overlay.hidden { display: none; }
+  .popup-box {
+    background: #141829; border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 18px; padding: 24px 20px; width: 100%; max-width: 340px;
+  }
+  .popup-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px; font-weight: 700; color: #FFFFFF;
+    margin-bottom: 6px; text-align: center;
+  }
+  .popup-sub {
+    font-size: 13px; color: #7A8BA0; text-align: center; margin-bottom: 20px;
+  }
+  .popup-item-name {
+    font-size: 14px; font-weight: 600; color: #FFB703;
+    text-align: center; margin-bottom: 20px;
+  }
+  .popup-btns { display: flex; flex-direction: column; gap: 10px; }
+  .popup-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border-radius: 12px;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    background: #1E2139; cursor: pointer; transition: all .15s;
+    text-align: left; width: 100%;
+  }
+  .popup-btn:hover { border-color: #FFB703; background: #252845; }
+  .popup-btn-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .icon-mod-a { background: #0d1f0d; color: #06A77D; }
+  .icon-mod-b { background: #0d1a2a; color: #378ADD; }
+  .popup-btn-text p { font-size: 14px; font-weight: 600; color: #FFFFFF; }
+  .popup-btn-text span { font-size: 12px; color: #7A8BA0; }
+  .popup-cancel {
+    margin-top: 8px; width: 100%; padding: 10px;
+    background: transparent; border: none; color: #7A8BA0;
+    font-size: 13px; cursor: pointer;
+  }
+  .popup-cancel:hover { color: #FFFFFF; }
+
   .loading-msg {
     text-align: center;
     padding: 50px;
@@ -995,6 +1043,32 @@
   </div>
 </div>
 
+<!-- POPUP MÓDULO BEBIDAS -->
+<div class="popup-overlay hidden" id="popup-modulo">
+  <div class="popup-box">
+    <p class="popup-title">¿A qué módulo van las bebidas?</p>
+    <p class="popup-sub">Elige según la carga operativa del momento</p>
+    <p class="popup-item-name" id="popup-item-nombre"></p>
+    <div class="popup-btns">
+      <button class="popup-btn" onclick="confirmarModuloBebida('A')">
+        <div class="popup-btn-icon icon-mod-a"><i class="ti ti-tools-kitchen-2"></i></div>
+        <div class="popup-btn-text">
+          <p>Módulo A</p>
+          <span>Papas y Nachos</span>
+        </div>
+      </button>
+      <button class="popup-btn" onclick="confirmarModuloBebida('B')">
+        <div class="popup-btn-icon icon-mod-b"><i class="ti ti-tools-kitchen-2"></i></div>
+        <div class="popup-btn-text">
+          <p>Módulo B</p>
+          <span>Perros y Batidos</span>
+        </div>
+      </button>
+    </div>
+    <button class="popup-cancel" onclick="cancelarPopup()">Cancelar</button>
+  </div>
+</div>
+
 <!-- FIREBASE SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -1004,9 +1078,9 @@
 // CONFIGURACIÓN — editar antes del evento
 // ═══════════════════════════════════════════
 const PINES = {
-  caja:  '2424',
-  prepA: '0707',
-  prepB: '9191',
+  caja:  '1234',
+  prepA: '5678',
+  prepB: '9012',
 };
 
 // URL secreta de gerencia: agrega ?gerencia=TU_CLAVE a la URL
@@ -1170,9 +1244,47 @@ function renderItems(cat) {
     </div>`).join('');
 }
 
+// Estado del popup de bebidas
+let _popupPendingId = null;
+let _popupPendingDelta = 0;
+
 function changeQty(id, delta) {
+  const item = MENU.find(i => i.id === id);
+  // Si es bebida compartida y se está agregando → mostrar popup
+  if (item.area === 'AB' && delta > 0) {
+    _popupPendingId = id;
+    _popupPendingDelta = delta;
+    document.getElementById('popup-item-nombre').textContent = item.nombre;
+    document.getElementById('popup-modulo').classList.remove('hidden');
+    return;
+  }
+  // Para restar bebidas o ítems normales → directo
+  _aplicarQty(id, delta);
+}
+
+function confirmarModuloBebida(modulo) {
+  if (!_popupPendingId) return;
+  const id = _popupPendingId;
+  const delta = _popupPendingDelta;
+  // Guardar el módulo elegido para esta bebida
+  if (!window.bebidaModulo) window.bebidaModulo = {};
+  window.bebidaModulo[id] = modulo;
+  _aplicarQty(id, delta);
+  document.getElementById('popup-modulo').classList.add('hidden');
+  _popupPendingId = null;
+}
+
+function cancelarPopup() {
+  document.getElementById('popup-modulo').classList.add('hidden');
+  _popupPendingId = null;
+}
+
+function _aplicarQty(id, delta) {
   cart[id] = Math.max(0, (cart[id]||0) + delta);
-  if (cart[id] === 0) delete cart[id];
+  if (cart[id] === 0) {
+    delete cart[id];
+    if (window.bebidaModulo) delete window.bebidaModulo[id];
+  }
   const el = document.getElementById('qty-'+id);
   if (el) el.textContent = cart[id]||0;
   updateCartPreview();
@@ -1183,16 +1295,20 @@ function updateCartPreview() {
   const section = document.getElementById('cart-section');
   if (keys.length === 0) { section.style.display = 'none'; return; }
   section.style.display = 'block';
+  const bMod = window.bebidaModulo || {};
   document.getElementById('cart-rows').innerHTML = keys.map(id => {
     const item = MENU.find(i => i.id === id);
+    const modTag = item.area === 'AB' && bMod[id]
+      ? `<span style="font-size:10px;color:#7A8BA0;margin-left:4px">Mód.${bMod[id]}</span>` : '';
     return `<div class="cart-row">
-      <span class="c-name">${item.nombre}</span>
+      <span class="c-name">${item.nombre}${modTag}</span>
       <span class="c-qty">x${cart[id]}</span>
     </div>`;
   }).join('');
 }
 
 function clearOrder() {
+  window.bebidaModulo = {};
   cart = {};
   document.getElementById('cliente-input').value = '';
   document.getElementById('nota-input').value = '';
@@ -1208,12 +1324,19 @@ function enviarComanda() {
   if (keys.length === 0) { showToast('Agrega al menos un producto', false); return; }
 
   const itemsA = [], itemsB = [];
+  const bMod = window.bebidaModulo || {};
   keys.forEach(id => {
     const item  = MENU.find(i => i.id === id);
-    const esBebidaCompartida = item.area === 'AB';
-    const entry = { nombre: item.nombre, qty: cart[id], compartida: esBebidaCompartida };
-    if (item.area === 'A' || item.area === 'AB') itemsA.push(entry);
-    if (item.area === 'B' || item.area === 'AB') itemsB.push(entry);
+    const entry = { nombre: item.nombre, qty: cart[id] };
+    if (item.area === 'AB') {
+      // Usar el módulo que eligió caja en el popup
+      const moduloElegido = bMod[id] || 'A';
+      if (moduloElegido === 'A') itemsA.push(entry);
+      else itemsB.push(entry);
+    } else {
+      if (item.area === 'A') itemsA.push(entry);
+      if (item.area === 'B') itemsB.push(entry);
+    }
   });
 
   // Consecutivo 1, 2, 3... sincronizado con Firebase
