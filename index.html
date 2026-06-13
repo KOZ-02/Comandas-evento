@@ -629,6 +629,19 @@
     font-weight: 600;
   }
   
+  .orden-timer-live {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px; font-weight: 700;
+    color: var(--text3);
+    background: var(--bg3);
+    padding: 4px 10px; border-radius: 20px;
+    white-space: nowrap;
+    transition: background .3s, color .3s;
+  }
+  .orden-timer-live.warn  { background: rgba(186,117,23,0.2); color: #FFB703; }
+  .orden-timer-live.hot   { background: rgba(226,75,74,0.2);  color: #E24B4A; animation: pulseRed 1s infinite; }
+  @keyframes pulseRed { 0%,100%{opacity:1} 50%{opacity:.6} }
+
   .orden-time {
     font-size: 12px;
     color: var(--text3);
@@ -1188,6 +1201,32 @@ let todasOrdenes = {};
 let gerenciaListenerA = null;
 let gerenciaListenerB = null;
 let _localCounter = null;
+let _tickInterval = null;       // intervalo para actualizar contadores en vivo
+let _prevPendingKeys = new Set(); // para detectar órdenes nuevas y sonar
+let _audioCtx = null;           // Web Audio API
+
+function _getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function playAlerta() {
+  try {
+    const ctx = _getAudioCtx();
+    // Dos pitidos cortos
+    [0, 0.25].forEach(offset => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.18);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.2);
+    });
+  } catch(e) {}
+}
 
 // Cargar contador desde Firebase al inicio
 db.ref('contador_comandas').once('value').then(snap => {
@@ -1257,6 +1296,7 @@ document.getElementById('pin-input').addEventListener('keydown', e => {
 
 function logout() {
   if (ordenesListener) { ordenesListener(); ordenesListener = null; }
+  if (_tickInterval)   { clearInterval(_tickInterval); _tickInterval = null; }
   currentRole = null;
   cart = {};
   todasOrdenes = {};
@@ -1423,11 +1463,34 @@ function initPrep(role) {
 
 function listenOrdenes() {
   if (ordenesListener) { ordenesListener(); ordenesListener = null; }
+  if (_tickInterval)   { clearInterval(_tickInterval); _tickInterval = null; }
+  _prevPendingKeys = new Set();
+
   const ref = db.ref(`ordenes/${currentPrepArea}`);
   ordenesListener = ref.on('value', snap => {
-    todasOrdenes = snap.val() || {};
+    const data = snap.val() || {};
+
+    // Detectar órdenes nuevas pendientes para sonar
+    const newPendingKeys = new Set(
+      Object.entries(data)
+        .filter(([,v]) => v.status === 'pendiente')
+        .map(([k]) => k)
+    );
+    let hayNuevas = false;
+    newPendingKeys.forEach(k => { if (!_prevPendingKeys.has(k)) hayNuevas = true; });
+    if (hayNuevas && _prevPendingKeys.size > 0) playAlerta();
+    _prevPendingKeys = newPendingKeys;
+
+    todasOrdenes = data;
     renderOrdenes();
   });
+
+  // Actualizar contadores en vivo cada 30 segundos
+  _tickInterval = setInterval(() => {
+    if (document.getElementById('screen-prep').classList.contains('active')) {
+      renderOrdenes();
+    }
+  }, 30000);
 }
 
 function filtrarOrdenes(filter, el) {
@@ -1453,9 +1516,21 @@ function renderOrdenes() {
   }
 
   wrap.innerHTML = filtered.map(o => {
-    const mins    = Math.floor((Date.now() - o.timestamp) / 60000);
-    const urgente = currentFilter === 'pendiente' && mins >= 10;
-    const timeStr = mins < 1 ? 'ahora mismo' : `hace ${mins} min`;
+    const now2   = Date.now();
+    const mins   = Math.floor((now2 - o.timestamp) / 60000);
+    const secs   = Math.floor(((now2 - o.timestamp) % 60000) / 1000);
+    const urgente = (currentFilter === 'pendiente' || currentFilter === 'lista') && mins >= 10;
+    const warn    = (currentFilter === 'pendiente' || currentFilter === 'lista') && mins >= 5 && mins < 10;
+
+    // Formato mm:ss para menos de 1 hora, o "Xh Ym" para más
+    let timerLabel;
+    if (mins < 60) {
+      timerLabel = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+    } else {
+      timerLabel = `${Math.floor(mins/60)}h ${mins%60}m`;
+    }
+    const timerClass = urgente ? 'hot' : warn ? 'warn' : '';
+
     const itemsHtml = (o.items||[]).map(i => {
       const tag = i.compartida ? `<span style="font-size:10px;background:rgba(255,183,3,0.18);color:#FFB703;padding:1px 6px;border-radius:4px;margin-left:4px;font-weight:700">AMBOS MÓDULOS</span>` : '';
       return `<strong>x${i.qty}</strong> ${i.nombre}${tag}`;
@@ -1480,7 +1555,7 @@ function renderOrdenes() {
           <p class="orden-num">#${o.numComanda}</p>
           <p class="orden-cliente">${o.cliente}</p>
         </div>
-        <span class="orden-time${urgente?' urgente':''}">${timeStr}</span>
+        <span class="orden-timer-live ${timerClass}">${timerLabel}</span>
       </div>
       <div class="orden-items">${itemsHtml}</div>
       ${o.nota ? `<div class="orden-nota"><i class="ti ti-message-circle"></i> ${o.nota}</div>` : ''}
@@ -1490,7 +1565,11 @@ function renderOrdenes() {
 }
 
 function cambiarStatus(key, newStatus) {
-  db.ref(`ordenes/${currentPrepArea}/${key}/status`).set(newStatus)
+  const updates = { status: newStatus };
+  // Guardar timestamp exacto de entrega para métricas precisas
+  if (newStatus === 'entregada') updates.deliveredAt = Date.now();
+  if (newStatus === 'lista')     updates.readyAt = Date.now();
+  db.ref(`ordenes/${currentPrepArea}/${key}`).update(updates)
     .catch(() => showToast('Error al actualizar. Revisa conexión.', false));
 }
 
@@ -1529,13 +1608,10 @@ function calcVentaOrden(items) {
 }
 
 function tiempoProm(ordenes) {
-  const now = Date.now();
-  const con = ordenes.filter(o => o.timestamp);
+  // Solo órdenes con deliveredAt real — tiempo exacto
+  const con = ordenes.filter(o => o.timestamp && o.deliveredAt);
   if (!con.length) return '—';
-  const avg = con.reduce((s,o) => {
-    const fin = o.status === 'entregada' ? Math.min(now, o.timestamp + 3600000) : now;
-    return s + Math.min((fin - o.timestamp) / 60000, 60);
-  }, 0) / con.length;
+  const avg = con.reduce((s,o) => s + (o.deliveredAt - o.timestamp)/60000, 0) / con.length;
   return Math.round(avg) + ' min';
 }
 
@@ -1580,11 +1656,11 @@ function renderDashboard(dataA, dataB) {
     setText('g-velocidad', '—');
   }
 
-  // Tiempo promedio total (entregadas)
-  const entregadasAll = allCombined.filter(o => o.status === 'entregada' && o.timestamp);
+  // Tiempo promedio total (entregadas) — usa deliveredAt si existe, si no omite la orden
+  const entregadasAll = allCombined.filter(o => o.status === 'entregada' && o.timestamp && o.deliveredAt);
   let tiempoTotal = '—';
   if (entregadasAll.length > 0) {
-    const avg = entregadasAll.reduce((s,o) => s + Math.min((now - o.timestamp)/60000, 60), 0) / entregadasAll.length;
+    const avg = entregadasAll.reduce((s,o) => s + (o.deliveredAt - o.timestamp)/60000, 0) / entregadasAll.length;
     tiempoTotal = Math.round(avg) + ' min';
   }
   setText('g-tiempo', tiempoTotal);
@@ -1649,8 +1725,8 @@ function renderDashboard(dataA, dataB) {
   // Tiempo promedio por artículo (solo entregadas)
   const tiemposPorArt = {};
   const cntPorArt = {};
-  allCombined.filter(o => o.status === 'entregada' && o.timestamp).forEach(o => {
-    const mins = Math.min((now - o.timestamp)/60000, 60);
+  allCombined.filter(o => o.status === 'entregada' && o.timestamp && o.deliveredAt).forEach(o => {
+    const mins = (o.deliveredAt - o.timestamp) / 60000;
     (o.items||[]).forEach(item => {
       tiemposPorArt[item.nombre] = (tiemposPorArt[item.nombre]||0) + mins * (item.qty||1);
       cntPorArt[item.nombre]     = (cntPorArt[item.nombre]||0) + (item.qty||1);
