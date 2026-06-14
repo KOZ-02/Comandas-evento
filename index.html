@@ -1110,6 +1110,21 @@
       <div class="bar-wrap" id="g-tiempos-art"></div>
     </div>
 
+    <div class="ger-section">
+      <p class="ger-title">Histórico del evento</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px">
+        <div class="venta-mini">
+          <p class="venta-mini-label">Venta total evento</p>
+          <p class="venta-mini-val" id="g-historico-total">$0</p>
+        </div>
+        <div class="venta-mini">
+          <p class="venta-mini-label">Órdenes totales</p>
+          <p class="venta-mini-val" id="g-historico-ordenes">0</p>
+        </div>
+      </div>
+      <div id="g-historico"><p style="color:var(--text3);font-size:13px">Cargando...</p></div>
+    </div>
+
   </div>
 </div>
 
@@ -1201,9 +1216,24 @@ let todasOrdenes = {};
 let gerenciaListenerA = null;
 let gerenciaListenerB = null;
 let _localCounter = null;
-let _tickInterval = null;       // intervalo para actualizar contadores en vivo
-let _prevPendingKeys = new Set(); // para detectar órdenes nuevas y sonar
-let _audioCtx = null;           // Web Audio API
+let _tickInterval = null;
+let _prevPendingKeys = new Set();
+let _audioCtx = null;
+
+// ── Fecha operativa: YYYY-MM-DD en zona Colombia (UTC-5)
+function getFechaHoy() {
+  const now = new Date();
+  const col = new Date(now.getTime() - (5 * 60 * 60 * 1000));
+  return col.toISOString().slice(0, 10);
+}
+
+// ── Rutas Firebase con fecha
+function refOrdenes(area) {
+  return db.ref(`ordenes/${getFechaHoy()}/${area}`);
+}
+function refContador() {
+  return db.ref(`contador/${getFechaHoy()}`);
+}
 
 function _getAudioCtx() {
   if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1228,14 +1258,14 @@ function playAlerta() {
   } catch(e) {}
 }
 
-// Cargar contador desde Firebase al inicio
-db.ref('contador_comandas').once('value').then(snap => {
+// Cargar contador del día actual desde Firebase
+refContador().once('value').then(snap => {
   _localCounter = (snap.val() || 0);
 }).catch(() => { _localCounter = 0; });
 
 function getNextNum() {
   _localCounter = (_localCounter || 0) + 1;
-  db.ref('contador_comandas').set(_localCounter).catch(() => {});
+  refContador().set(_localCounter).catch(() => {});
   return _localCounter;
 }
 
@@ -1442,8 +1472,8 @@ function enviarComanda() {
 
   const base = { cliente, nota, timestamp: Date.now(), numComanda, status: 'pendiente', _k: APP_SECRET };
   const writes = [];
-  if (itemsA.length) writes.push(db.ref('ordenes/A').push({ ...base, items: itemsA }));
-  if (itemsB.length) writes.push(db.ref('ordenes/B').push({ ...base, items: itemsB }));
+  if (itemsA.length) writes.push(refOrdenes('A').push({ ...base, items: itemsA }));
+  if (itemsB.length) writes.push(refOrdenes('B').push({ ...base, items: itemsB }));
 
   Promise.all(writes)
     .then(() => { showToast('✓ Comanda ' + numComanda + ' enviada'); clearOrder(); })
@@ -1466,7 +1496,7 @@ function listenOrdenes() {
   if (_tickInterval)   { clearInterval(_tickInterval); _tickInterval = null; }
   _prevPendingKeys = new Set();
 
-  const ref = db.ref(`ordenes/${currentPrepArea}`);
+  const ref = refOrdenes(currentPrepArea);
   ordenesListener = ref.on('value', snap => {
     const data = snap.val() || {};
 
@@ -1569,7 +1599,7 @@ function cambiarStatus(key, newStatus) {
   // Guardar timestamp exacto de entrega para métricas precisas
   if (newStatus === 'entregada') updates.deliveredAt = Date.now();
   if (newStatus === 'lista')     updates.readyAt = Date.now();
-  db.ref(`ordenes/${currentPrepArea}/${key}`).update(updates)
+  refOrdenes(currentPrepArea).child(key).update(updates)
     .catch(() => showToast('Error al actualizar. Revisa conexión.', false));
 }
 
@@ -1585,15 +1615,104 @@ function initGerencia() {
   if (gerenciaListenerB) { gerenciaListenerB(); gerenciaListenerB = null; }
 
   let dataA = {}, dataB = {};
+  const hoy = getFechaHoy();
 
-  gerenciaListenerA = db.ref('ordenes/A').on('value', snap => {
+  // Listeners del día actual
+  gerenciaListenerA = refOrdenes('A').on('value', snap => {
     dataA = snap.val() || {};
     renderDashboard(dataA, dataB);
+    cargarHistorico();
   });
-  gerenciaListenerB = db.ref('ordenes/B').on('value', snap => {
+  gerenciaListenerB = refOrdenes('B').on('value', snap => {
     dataB = snap.val() || {};
     renderDashboard(dataA, dataB);
   });
+}
+
+// ── Cargar histórico de todos los días
+function cargarHistorico() {
+  db.ref('ordenes').once('value').then(snap => {
+    const todos = snap.val() || {};
+    const dias = Object.keys(todos).sort();
+    const hoy  = getFechaHoy();
+    renderHistorico(todos, dias, hoy);
+  });
+}
+
+function renderHistorico(todos, dias, hoy) {
+  const wrap = document.getElementById('g-historico');
+  if (!wrap) return;
+  if (dias.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--text3);font-size:13px">Sin datos históricos aún</p>';
+    return;
+  }
+
+  // Calcular métricas por día
+  const filas = dias.map(dia => {
+    const diaData = todos[dia] || {};
+    const allA = Object.values(diaData.A || {});
+    const allB = Object.values(diaData.B || {});
+    const all  = [...allA, ...allB];
+
+    // Deduplicar
+    const seen = new Set();
+    const uniq = all.filter(o => {
+      if (seen.has(o.numComanda)) return false;
+      seen.add(o.numComanda); return true;
+    });
+
+    // Ventas
+    const venta = all.reduce((s,o) => s + calcVentaOrden(o.items), 0);
+
+    // Entregadas
+    const entregadas = uniq.filter(o => o.status === 'entregada').length;
+
+    // Tiempo promedio
+    const conTiempo = all.filter(o => o.deliveredAt && o.timestamp);
+    const tProm = conTiempo.length > 0
+      ? Math.round(conTiempo.reduce((s,o) => s + (o.deliveredAt - o.timestamp)/60000, 0) / conTiempo.length)
+      : null;
+
+    const esHoy = dia === hoy;
+    return { dia, uniq: uniq.length, entregadas, venta, tProm, esHoy };
+  }).reverse(); // más reciente primero
+
+  const maxVenta = Math.max(...filas.map(f => f.venta), 1);
+
+  wrap.innerHTML = filas.map(f => `
+    <div style="background:${f.esHoy ? 'rgba(59,109,17,0.12)' : 'var(--bg2)'};border:1.5px solid ${f.esHoy ? '#3B6D11' : 'var(--border)'};border-radius:12px;padding:14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:${f.esHoy ? '#A8F04D' : 'var(--text)'}">
+          ${f.esHoy ? '● HOY — ' : ''}${f.dia}
+        </span>
+        <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:#A8F04D">${formatCOP(f.venta)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">
+        <div style="text-align:center">
+          <p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">Órdenes</p>
+          <p style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text)">${f.uniq}</p>
+        </div>
+        <div style="text-align:center">
+          <p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">Entregadas</p>
+          <p style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#639922">${f.entregadas}</p>
+        </div>
+        <div style="text-align:center">
+          <p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">T. prom.</p>
+          <p style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#FFB703">${f.tProm !== null ? f.tProm + ' min' : '—'}</p>
+        </div>
+      </div>
+      <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
+        <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#A8F04D,#06A77D);width:${Math.round((f.venta/maxVenta)*100)}%"></div>
+      </div>
+    </div>`).join('');
+
+  // Total acumulado del evento
+  const totalEvento = filas.reduce((s,f) => s + f.venta, 0);
+  const totalOrdenes = filas.reduce((s,f) => s + f.uniq, 0);
+  const elTotal = document.getElementById('g-historico-total');
+  if (elTotal) elTotal.textContent = formatCOP(totalEvento);
+  const elOrd = document.getElementById('g-historico-ordenes');
+  if (elOrd) elOrd.textContent = totalOrdenes;
 }
 
 function formatCOP(val) {
