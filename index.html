@@ -1477,6 +1477,11 @@ const firebaseConfig = {
 const MENU = [
   { id:'cc0', nombre:'Coca Cola Zero 10oz',  area:'AB', cat:'Bebidas', precio:5200    },
   { id:'cc1', nombre:'Coca Cola 10oz',        area:'AB', cat:'Bebidas', precio:5200    },
+  { id:'bm1', nombre:'BBC Monserrate',        area:'AB', cat:'Bebidas', precio:12000   },
+  { id:'bm2', nombre:'BBC Cajicá',            area:'AB', cat:'Bebidas', precio:12000   },
+  { id:'bm3', nombre:'Stella',                area:'AB', cat:'Bebidas', precio:7100    },
+  { id:'bm4', nombre:'Club Colombia',         area:'AB', cat:'Bebidas', precio:7200    },
+  { id:'bm5', nombre:'Six Pack Corona',       area:'AB', cat:'Bebidas', precio:28600   },
   { id:'pa1', nombre:'Papas carne mundial',   area:'A',  cat:'Papas',   precio:32900   },
   { id:'pa2', nombre:'Papas sencillas',       area:'A',  cat:'Papas',   precio:25000   },
   { id:'pa3', nombre:'Papas tocineta',        area:'A',  cat:'Papas',   precio:32900   },
@@ -2197,28 +2202,31 @@ function initGerencia() {
   if (gerenciaListenerA) { gerenciaListenerA(); gerenciaListenerA = null; }
   if (gerenciaListenerB) { gerenciaListenerB(); gerenciaListenerB = null; }
 
-  // Loading state mientras llega el primer dato
   _gerenciaDataLoaded = false;
-  const gerBody = document.querySelector('.ger-body');
-  if (gerBody) {
-    gerBody.dataset.loaded = 'false';
-  }
   mostrarLoadingDashboard();
 
-  let dataA = {}, dataB = {};
   const hoy = getFechaHoy();
   _horasDiaSeleccionado = hoy;
 
-  // Listeners del día actual
-  gerenciaListenerA = refOrdenes('A').on('value', snap => {
-    dataA = snap.val() || {};
+  // Cargar TODOS los días del histórico para el dashboard
+  // El listener escucha el nodo /ordenes completo en tiempo real
+  db.ref('ordenes').on('value', snap => {
+    const todosLosDias = snap.val() || {};
+
+    // Datos de HOY para el dashboard principal
+    const diaHoy = todosLosDias[hoy] || {};
+    const dataA = diaHoy['A'] || {};
+    const dataB = diaHoy['B'] || {};
+
     ocultarLoadingDashboard();
     renderDashboard(dataA, dataB);
-    cargarHistorico();
-  });
-  gerenciaListenerB = refOrdenes('B').on('value', snap => {
-    dataB = snap.val() || {};
-    renderDashboard(dataA, dataB);
+
+    // Histórico usa todos los días
+    const dias = Object.keys(todosLosDias).sort();
+    _horasDataCache = todosLosDias;
+    renderHistorico(todosLosDias, dias, hoy);
+    renderSelectorDias(dias, hoy);
+    renderVentaPorHoras(_horasDiaSeleccionado || hoy);
   });
 }
 
