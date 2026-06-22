@@ -727,6 +727,179 @@
   
   .toast.show { opacity: 1; }
   
+  /* PESTAÑAS GERENCIA */
+  .ger-tabs {
+    display: flex; gap: 0; margin: 0 0 16px; max-width: 560px;
+    margin-left: auto; margin-right: auto; padding: 0 20px;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .ger-tab {
+    flex: 1; padding: 12px 8px; background: none; border: none;
+    color: var(--text3); font-size: 13px; font-weight: 700;
+    cursor: pointer; border-bottom: 2.5px solid transparent;
+    margin-bottom: -1.5px; transition: all .15s;
+  }
+  .ger-tab.active { color: #FFB703; border-bottom-color: #FFB703; }
+  .ger-pane { display: none; }
+  .ger-pane.active { display: block; }
+
+  /* IMPORTADOR VENTA GENERAL */
+  .upload-box {
+    background: var(--bg2); border: 1.5px dashed var(--border2);
+    border-radius: var(--radius-lg); padding: 24px 16px;
+    text-align: center; margin-bottom: 16px;
+  }
+  .upload-box i { font-size: 28px; color: #FFB703; margin-bottom: 8px; display: block; }
+  .upload-box p { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+  .upload-box span { font-size: 11px; color: var(--text3); }
+  .upload-btn-label {
+    display: inline-block; margin-top: 12px; padding: 10px 20px;
+    background: linear-gradient(135deg, var(--yellow), var(--gold));
+    color: #1a1200; font-size: 13px; font-weight: 700;
+    border-radius: 10px; cursor: pointer;
+  }
+  .upload-status { font-size: 12px; margin-top: 10px; }
+  .upload-status.ok   { color: #06A77D; }
+  .upload-status.err  { color: #E24B4A; }
+  .upload-status.busy { color: #FFB703; }
+  .vg-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+    font-size: 12px; color: var(--text3);
+  }
+  .vg-meta strong { color: var(--text); }
+  .vg-table-wrap { overflow-x: auto; border: 1.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 4px; }
+  .vg-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .vg-table th {
+    text-align: left; padding: 8px 10px; font-size: 10px;
+    color: var(--text3); text-transform: uppercase; letter-spacing: .05em;
+    border-bottom: 1.5px solid var(--border2); font-weight: 700;
+    background: var(--bg2); position: sticky; top: 0;
+  }
+  .vg-table th:not(:first-child) { text-align: right; }
+  .vg-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text2); }
+  .vg-table td:not(:first-child) { text-align: right; font-family: 'Space Grotesk', sans-serif; }
+  .vg-table tr:last-child td { border-bottom: none; }
+
+  /* CANCELAR / HISTORIAL / LOADING */
+  .btn-cancel-orden {
+    background: transparent; border: 1.5px solid rgba(226,75,74,0.4);
+    color: #E24B4A; font-size: 12px; padding: 7px 12px;
+  }
+  .btn-cancel-orden:hover { background: rgba(226,75,74,0.12); border-color: #E24B4A; }
+
+  .historial-fab {
+    position: fixed; bottom: 90px; right: 18px;
+    width: 50px; height: 50px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--yellow), var(--gold));
+    color: #1a1200; border: none; font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    z-index: 50;
+  }
+  .historial-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 200;
+  }
+  .historial-overlay.hidden { display: none; }
+  .historial-sheet {
+    background: #141829; border-radius: 18px 18px 0 0;
+    width: 100%; max-width: 500px; max-height: 75vh;
+    display: flex; flex-direction: column;
+    border-top: 1.5px solid rgba(255,255,255,0.1);
+  }
+  .historial-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .historial-header p { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; color:#fff; }
+  .historial-close { background:none; border:none; color:#7A8BA0; font-size:20px; cursor:pointer; }
+  .historial-body { overflow-y: auto; padding: 12px 16px 24px; }
+  .historial-item {
+    background: #1E2139; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 12px; margin-bottom: 8px;
+  }
+  .historial-item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .historial-num { font-family:'Space Grotesk',sans-serif; font-weight:700; color:#FFB703; font-size:14px; }
+  .historial-cliente { font-size: 12px; color: #B8C5D6; }
+  .historial-status {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+    text-transform: uppercase;
+  }
+  .hs-pendiente { background: rgba(255,183,3,0.15); color: #FFB703; }
+  .hs-lista     { background: rgba(6,167,125,0.15); color: #06A77D; }
+  .hs-entregada { background: rgba(55,138,221,0.15); color: #378ADD; }
+  .historial-items-txt { font-size: 12px; color: #7A8BA0; }
+  .historial-empty { text-align: center; padding: 40px 20px; color: #7A8BA0; font-size: 13px; }
+
+  .dash-loading {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 20px; gap: 12px;
+  }
+  .dash-spinner {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 3px solid rgba(255,183,3,0.2); border-top-color: #FFB703;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .dash-loading p { font-size: 13px; color: #7A8BA0; }
+
+  /* VENTA POR HORAS */
+  .horas-selector {
+    display: flex; gap: 6px; overflow-x: auto; margin-bottom: 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .horas-selector::-webkit-scrollbar { display: none; }
+  .horas-day-pill {
+    flex-shrink: 0; padding: 7px 16px; border-radius: 20px;
+    border: 1.5px solid var(--border2); background: var(--bg2);
+    font-size: 12px; font-weight: 600; color: var(--text3); cursor: pointer;
+    white-space: nowrap; transition: all .15s;
+  }
+  .horas-day-pill.active {
+    background: linear-gradient(135deg, var(--yellow), var(--gold));
+    color: #1a1200; border-color: transparent;
+  }
+  .horas-chart {
+    display: flex; align-items: flex-end; gap: 3px;
+    height: 140px; padding: 10px 4px 0;
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); margin-bottom: 12px;
+    overflow-x: auto;
+  }
+  .horas-bar-col {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-end; flex: 1; min-width: 22px; height: 100%;
+    position: relative;
+  }
+  .horas-bar-fill {
+    width: 100%; max-width: 26px; border-radius: 4px 4px 0 0;
+    background: linear-gradient(180deg, #A8F04D, #06A77D);
+    min-height: 2px; transition: height .4s ease;
+  }
+  .horas-bar-fill.empty { background: var(--bg3); }
+  .horas-bar-label {
+    font-size: 9px; color: var(--text3); margin-top: 4px;
+    writing-mode: horizontal-tb; white-space: nowrap;
+  }
+  .horas-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .horas-table th {
+    text-align: left; padding: 8px 10px; font-size: 10px;
+    color: var(--text3); text-transform: uppercase; letter-spacing: .05em;
+    border-bottom: 1.5px solid var(--border2); font-weight: 700;
+  }
+  .horas-table th:not(:first-child) { text-align: right; }
+  .horas-table td {
+    padding: 9px 10px; border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .horas-table td:not(:first-child) { text-align: right; font-family: 'Space Grotesk', sans-serif; }
+  .horas-table tr.pico-row td { color: var(--text); font-weight: 700; }
+  .horas-table tr.pico-row { background: rgba(168,240,77,0.06); }
+  .horas-table-wrap { overflow-x: auto; border: 1.5px solid var(--border); border-radius: var(--radius-lg); }
+
   /* VENTAS */
   .venta-hero {
     background: linear-gradient(135deg, #0d2a0d, #1a3d0a);
@@ -950,6 +1123,9 @@
       </button>
     </div>
   </div>
+  <button class="historial-fab" onclick="abrirHistorialCaja()" title="Mis comandas">
+    <i class="ti ti-history"></i>
+  </button>
 </div>
 
 <!-- PREPARACIÓN -->
@@ -986,7 +1162,14 @@
     </div>
     <button class="btn btn-sm" onclick="logout()">Salir</button>
   </div>
-  <div class="ger-body">
+
+  <div class="ger-tabs">
+    <button class="ger-tab active" onclick="cambiarTabGerencia('evento', this)">Evento</button>
+    <button class="ger-tab" onclick="cambiarTabGerencia('general', this)">Venta General</button>
+  </div>
+
+  <div id="ger-pane-evento" class="ger-pane active">
+  <div class="ger-body" style="padding-top:0">
 
     <div class="ger-section">
       <p class="ger-title">Ventas estimadas</p>
@@ -1111,6 +1294,20 @@
     </div>
 
     <div class="ger-section">
+      <p class="ger-title">Venta por horas</p>
+      <div class="horas-selector" id="horas-day-selector"></div>
+      <div class="horas-chart" id="horas-chart"></div>
+      <div class="horas-table-wrap">
+        <table class="horas-table">
+          <thead>
+            <tr><th>Hora</th><th>Órdenes</th><th>Venta</th><th>Ticket prom.</th></tr>
+          </thead>
+          <tbody id="horas-tabla-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ger-section">
       <p class="ger-title">Histórico del evento</p>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px">
         <div class="venta-mini">
@@ -1126,6 +1323,84 @@
     </div>
 
   </div>
+  </div>
+
+  <div id="ger-pane-general" class="ger-pane">
+  <div class="ger-body" style="padding-top:0">
+
+    <div class="ger-section">
+      <p class="ger-title">Cargar reporte ICG</p>
+      <div class="upload-box">
+        <i class="ti ti-file-spreadsheet"></i>
+        <p>Sube el reporte Excel exportado de ICG</p>
+        <span>Columnas esperadas: Fecha, Hora, Descripción, UDSVENDIDAS, Neto</span>
+        <br>
+        <label class="upload-btn-label" for="vg-file-input">
+          <i class="ti ti-upload"></i> Seleccionar archivo
+        </label>
+        <input type="file" id="vg-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="procesarArchivoVentaGeneral(event)">
+        <div class="upload-status" id="vg-upload-status"></div>
+      </div>
+      <div class="vg-meta" id="vg-meta" style="display:none">
+        <span>Último reporte cargado</span>
+        <strong id="vg-meta-fecha">—</strong>
+      </div>
+    </div>
+
+    <div id="vg-content" style="display:none">
+
+      <div class="ger-section">
+        <p class="ger-title">Resumen general del punto</p>
+        <div class="venta-hero">
+          <p class="venta-hero-label">Venta total del periodo</p>
+          <p class="venta-hero-val" id="vg-total">$0</p>
+          <p class="venta-hero-sub" id="vg-rango">—</p>
+        </div>
+        <div class="venta-split">
+          <div class="venta-mini">
+            <p class="venta-mini-label">Transacciones</p>
+            <p class="venta-mini-val" id="vg-facturas">0</p>
+            <p class="venta-mini-sub">Facturas totales</p>
+          </div>
+          <div class="venta-mini">
+            <p class="venta-mini-label">Ticket promedio</p>
+            <p class="venta-mini-val" id="vg-ticket">$0</p>
+            <p class="venta-mini-sub">Por factura</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ger-section">
+        <p class="ger-title">Venta por día</p>
+        <div class="horas-chart" id="vg-chart-dias"></div>
+        <div class="vg-table-wrap">
+          <table class="vg-table">
+            <thead><tr><th>Día</th><th>Facturas</th><th>Venta</th></tr></thead>
+            <tbody id="vg-tabla-dias"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ger-section">
+        <p class="ger-title">Venta por hora (acumulado del periodo)</p>
+        <div class="horas-chart" id="vg-chart-horas"></div>
+      </div>
+
+      <div class="ger-section">
+        <p class="ger-title">Top 15 productos más vendidos</p>
+        <div class="vg-table-wrap">
+          <table class="vg-table">
+            <thead><tr><th>Producto</th><th>Unidades</th><th>Venta</th></tr></thead>
+            <tbody id="vg-tabla-productos"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+  </div>
+
 </div>
 
 <!-- POPUP MÓDULO BEBIDAS -->
@@ -1154,9 +1429,23 @@
   </div>
 </div>
 
+<!-- HISTORIAL DE CAJA -->
+<div class="historial-overlay hidden" id="historial-overlay" onclick="if(event.target===this) cerrarHistorialCaja()">
+  <div class="historial-sheet">
+    <div class="historial-header">
+      <p>Mis comandas de hoy</p>
+      <button class="historial-close" onclick="cerrarHistorialCaja()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="historial-body" id="historial-body">
+      <div class="historial-empty">Cargando...</div>
+    </div>
+  </div>
+</div>
+
 <!-- FIREBASE SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
 // ═══════════════════════════════════════════
@@ -1327,20 +1616,80 @@ document.getElementById('pin-input').addEventListener('keydown', e => {
 function logout() {
   if (ordenesListener) { ordenesListener(); ordenesListener = null; }
   if (_tickInterval)   { clearInterval(_tickInterval); _tickInterval = null; }
+  if (_historialListenerA) { _historialListenerA(); _historialListenerA = null; }
+  if (_historialListenerB) { _historialListenerB(); _historialListenerB = null; }
   currentRole = null;
   cart = {};
   todasOrdenes = {};
   document.getElementById('pin-section').style.display = 'none';
+  document.getElementById('historial-overlay').classList.add('hidden');
   show('screen-login');
 }
 
 // ── CAJA ──
+let _historialListenerA = null;
+let _historialListenerB = null;
+
 function initCaja() {
   show('screen-caja');
   cart = {};
   document.getElementById('cliente-input').value = '';
   document.getElementById('nota-input').value = '';
   renderCatTabs();
+}
+
+function abrirHistorialCaja() {
+  document.getElementById('historial-overlay').classList.remove('hidden');
+  document.getElementById('historial-body').innerHTML = '<div class="historial-empty">Cargando...</div>';
+
+  if (_historialListenerA) { _historialListenerA(); _historialListenerA = null; }
+  if (_historialListenerB) { _historialListenerB(); _historialListenerB = null; }
+
+  let hA = {}, hB = {};
+  const render = () => renderHistorialCaja(hA, hB);
+
+  _historialListenerA = refOrdenes('A').on('value', snap => { hA = snap.val() || {}; render(); });
+  _historialListenerB = refOrdenes('B').on('value', snap => { hB = snap.val() || {}; render(); });
+}
+
+function cerrarHistorialCaja() {
+  document.getElementById('historial-overlay').classList.add('hidden');
+  if (_historialListenerA) { _historialListenerA(); _historialListenerA = null; }
+  if (_historialListenerB) { _historialListenerB(); _historialListenerB = null; }
+}
+
+function renderHistorialCaja(hA, hB) {
+  const combined = [...Object.values(hA), ...Object.values(hB)];
+  // Deduplicar por numComanda (bebidas AB aparecen en ambos)
+  const seen = new Set();
+  const unique = combined.filter(o => {
+    if (seen.has(o.numComanda)) return false;
+    seen.add(o.numComanda); return true;
+  }).sort((a,b) => b.timestamp - a.timestamp); // más reciente primero
+
+  const body = document.getElementById('historial-body');
+  if (!body) return;
+
+  if (unique.length === 0) {
+    body.innerHTML = '<div class="historial-empty">Aún no has enviado comandas hoy</div>';
+    return;
+  }
+
+  const statusLabel = { pendiente: 'Pendiente', lista: 'En preparación', entregada: 'Entregada', cancelada: 'Cancelada' };
+  const statusClass = { pendiente: 'hs-pendiente', lista: 'hs-lista', entregada: 'hs-entregada', cancelada: 'hs-pendiente' };
+
+  body.innerHTML = unique.map(o => {
+    const hora = new Date(o.timestamp).toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'});
+    const itemsTxt = (o.items || []).map(i => `${i.qty}x ${i.nombre}`).join(', ');
+    return `<div class="historial-item">
+      <div class="historial-item-top">
+        <span class="historial-num">#${o.numComanda}</span>
+        <span class="historial-status ${statusClass[o.status]||'hs-pendiente'}">${statusLabel[o.status]||o.status}</span>
+      </div>
+      <p class="historial-cliente">${o.cliente} · ${hora}</p>
+      <p class="historial-items-txt">${itemsTxt}</p>
+    </div>`;
+  }).join('');
 }
 
 function renderCatTabs() {
@@ -1533,6 +1882,7 @@ function filtrarOrdenes(filter, el) {
 function renderOrdenes() {
   const all      = Object.entries(todasOrdenes).map(([k,v]) => ({key:k,...v}));
   const filtered = all.filter(o => o.status === currentFilter).sort((a,b) => a.timestamp - b.timestamp);
+  // Nota: las canceladas no aparecen en ningún filtro estándar (pendiente/lista/entregada)
   const pending  = all.filter(o => o.status === 'pendiente').length;
   const ready    = all.filter(o => o.status === 'lista').length;
   document.getElementById('cnt-pendiente').textContent = pending;
@@ -1570,6 +1920,9 @@ function renderOrdenes() {
     if (currentFilter === 'pendiente') {
       actions = `<button class="btn btn-success btn-sm" onclick="cambiarStatus('${o.key}','lista')">
         <i class="ti ti-chef-hat"></i> En preparación
+      </button>
+      <button class="btn btn-cancel-orden btn-sm" onclick="confirmarCancelar('${o.key}','${o.numComanda}')">
+        <i class="ti ti-x"></i> Cancelar
       </button>`;
     } else if (currentFilter === 'lista') {
       actions = `
@@ -1594,6 +1947,216 @@ function renderOrdenes() {
   }).join('');
 }
 
+// ═══════════════════════════════════════════
+// VENTA GENERAL — pestañas e importador ICG
+// ═══════════════════════════════════════════
+function cambiarTabGerencia(tab, el) {
+  document.querySelectorAll('.ger-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ger-pane-evento').classList.toggle('active', tab === 'evento');
+  document.getElementById('ger-pane-general').classList.toggle('active', tab === 'general');
+  if (tab === 'general') cargarVentaGeneralGuardada();
+}
+
+function procesarArchivoVentaGeneral(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById('vg-upload-status');
+  statusEl.textContent = 'Procesando archivo...';
+  statusEl.className = 'upload-status busy';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array', cellDates: true });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+      if (rows.length === 0) throw new Error('Archivo vacío');
+
+      const procesado = procesarFilasICG(rows);
+      guardarVentaGeneral(procesado, file.name);
+
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = 'Error al leer el archivo. Verifica el formato.';
+      statusEl.className = 'upload-status err';
+    }
+  };
+  reader.onerror = function() {
+    statusEl.textContent = 'Error al leer el archivo.';
+    statusEl.className = 'upload-status err';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function excelDateToJS(serial) {
+  // Convierte fecha serial de Excel a Date JS
+  if (serial instanceof Date) return serial;
+  const utcDays = Math.floor(serial - 25569);
+  return new Date(utcDays * 86400 * 1000);
+}
+
+function procesarFilasICG(rows) {
+  const porDia = {};
+  const porHora = {};
+  const porProducto = {};
+  const facturasUnicas = new Set();
+  let ventaTotal = 0;
+  let fechaMin = null, fechaMax = null;
+
+  rows.forEach(row => {
+    const fechaRaw = row['Fecha'];
+    const horaRaw  = row['Hora'];
+    const desc     = row['Descripción'];
+    const uds      = parseFloat(row['UDSVENDIDAS']) || 0;
+    const neto     = parseFloat(row['Neto']) || 0;
+    const numFac   = row['NUMFAC'];
+
+    if (!fechaRaw || neto === undefined) return;
+
+    const fecha = excelDateToJS(fechaRaw);
+    const fechaStr = fecha.toISOString().slice(0,10);
+
+    if (!fechaMin || fechaStr < fechaMin) fechaMin = fechaStr;
+    if (!fechaMax || fechaStr > fechaMax) fechaMax = fechaStr;
+
+    // Por día
+    if (!porDia[fechaStr]) porDia[fechaStr] = { venta: 0, facturas: new Set() };
+    porDia[fechaStr].venta += neto;
+    if (numFac) porDia[fechaStr].facturas.add(fechaStr + '_' + numFac);
+
+    // Por hora (extraer hora de string "HH:MM:SS" o Date)
+    let hora = null;
+    if (typeof horaRaw === 'string') {
+      hora = parseInt(horaRaw.split(':')[0]);
+    } else if (horaRaw instanceof Date) {
+      hora = horaRaw.getHours();
+    }
+    if (hora !== null && !isNaN(hora)) {
+      if (!porHora[hora]) porHora[hora] = 0;
+      porHora[hora] += neto;
+    }
+
+    // Por producto
+    if (desc) {
+      if (!porProducto[desc]) porProducto[desc] = { uds: 0, venta: 0 };
+      porProducto[desc].uds += uds;
+      porProducto[desc].venta += neto;
+    }
+
+    // Facturas únicas globales
+    if (numFac) facturasUnicas.add(fechaStr + '_' + numFac);
+
+    ventaTotal += neto;
+  });
+
+  // Convertir sets a counts
+  const diasFinal = {};
+  Object.keys(porDia).forEach(d => {
+    diasFinal[d] = { venta: Math.round(porDia[d].venta), facturas: porDia[d].facturas.size };
+  });
+
+  return {
+    ventaTotal: Math.round(ventaTotal),
+    totalFacturas: facturasUnicas.size,
+    fechaMin, fechaMax,
+    porDia: diasFinal,
+    porHora,
+    porProducto,
+    cargadoEn: Date.now()
+  };
+}
+
+function guardarVentaGeneral(procesado, nombreArchivo) {
+  const statusEl = document.getElementById('vg-upload-status');
+  procesado.nombreArchivo = nombreArchivo;
+
+  db.ref('venta_general').set(procesado).then(() => {
+    statusEl.textContent = '✓ Reporte cargado correctamente';
+    statusEl.className = 'upload-status ok';
+    renderVentaGeneral(procesado);
+  }).catch(err => {
+    console.error(err);
+    statusEl.textContent = 'Error al guardar en la base de datos.';
+    statusEl.className = 'upload-status err';
+  });
+}
+
+function cargarVentaGeneralGuardada() {
+  db.ref('venta_general').once('value').then(snap => {
+    const data = snap.val();
+    if (data) renderVentaGeneral(data);
+  });
+}
+
+function renderVentaGeneral(data) {
+  document.getElementById('vg-content').style.display = 'block';
+
+  const metaEl = document.getElementById('vg-meta');
+  metaEl.style.display = 'flex';
+  const fechaCarga = new Date(data.cargadoEn);
+  document.getElementById('vg-meta-fecha').textContent =
+    `${data.nombreArchivo || 'archivo'} — ${fechaCarga.toLocaleDateString('es-CO')} ${fechaCarga.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}`;
+
+  // Resumen general
+  setText('vg-total', formatCOP(data.ventaTotal));
+  setText('vg-rango', data.fechaMin === data.fechaMax ? data.fechaMin : `${data.fechaMin} a ${data.fechaMax}`);
+  setText('vg-facturas', data.totalFacturas.toLocaleString('es-CO'));
+  const ticketProm = data.totalFacturas > 0 ? data.ventaTotal / data.totalFacturas : 0;
+  setText('vg-ticket', formatCOP(ticketProm));
+
+  // Venta por día — gráfica + tabla
+  const dias = Object.keys(data.porDia).sort();
+  const maxDiaVenta = Math.max(...dias.map(d => data.porDia[d].venta), 1);
+
+  const chartDias = document.getElementById('vg-chart-dias');
+  chartDias.innerHTML = dias.map(d => {
+    const venta = data.porDia[d].venta;
+    const h = Math.max(Math.round((venta/maxDiaVenta)*100), 4);
+    const diaCorto = new Date(d + 'T12:00:00').toLocaleDateString('es-CO', {weekday:'short'});
+    return `<div class="horas-bar-col">
+      <div class="horas-bar-fill" style="height:${h}%" title="${formatCOP(venta)}"></div>
+      <span class="horas-bar-label">${diaCorto}</span>
+    </div>`;
+  }).join('');
+
+  const tablaDias = document.getElementById('vg-tabla-dias');
+  tablaDias.innerHTML = dias.map(d => `
+    <tr>
+      <td>${d}</td>
+      <td>${data.porDia[d].facturas}</td>
+      <td>${formatCOP(data.porDia[d].venta)}</td>
+    </tr>`).join('');
+
+  // Venta por hora acumulada
+  const horas = Object.keys(data.porHora).map(Number).sort((a,b) => a-b);
+  const maxHoraVenta = Math.max(...horas.map(h => data.porHora[h]), 1);
+  const chartHoras = document.getElementById('vg-chart-horas');
+  chartHoras.innerHTML = horas.map(h => {
+    const venta = data.porHora[h];
+    const hgt = Math.max(Math.round((venta/maxHoraVenta)*100), 4);
+    return `<div class="horas-bar-col">
+      <div class="horas-bar-fill" style="height:${hgt}%" title="${formatCOP(venta)}"></div>
+      <span class="horas-bar-label">${h.toString().padStart(2,'0')}h</span>
+    </div>`;
+  }).join('');
+
+  // Top 15 productos
+  const productos = Object.entries(data.porProducto)
+    .sort((a,b) => b[1].venta - a[1].venta)
+    .slice(0, 15);
+  const tablaProd = document.getElementById('vg-tabla-productos');
+  tablaProd.innerHTML = productos.map(([nombre, d]) => `
+    <tr>
+      <td>${nombre}</td>
+      <td>${d.uds % 1 === 0 ? d.uds : d.uds.toFixed(2)}</td>
+      <td>${formatCOP(d.venta)}</td>
+    </tr>`).join('');
+}
+
 function cambiarStatus(key, newStatus) {
   const updates = { status: newStatus };
   // Guardar timestamp exacto de entrega para métricas precisas
@@ -1603,9 +2166,29 @@ function cambiarStatus(key, newStatus) {
     .catch(() => showToast('Error al actualizar. Revisa conexión.', false));
 }
 
+function confirmarCancelar(key, numComanda) {
+  if (confirm(`¿Cancelar la comanda #${numComanda}? Esta acción no se puede deshacer.`)) {
+    cancelarOrden(key, numComanda);
+  }
+}
+
+function cancelarOrden(key, numComanda) {
+  refOrdenes(currentPrepArea).child(key).update({
+    status: 'cancelada',
+    canceledAt: Date.now()
+  }).then(() => {
+    showToast(`Comanda #${numComanda} cancelada`, false);
+  }).catch(() => showToast('Error al cancelar. Revisa conexión.', false));
+}
+
 // ═══════════════════════════════════════════
 // GERENCIA
 // ═══════════════════════════════════════════
+let _horasDataCache = {};      // cache de todos los días para venta por horas
+let _horasDiaSeleccionado = null;
+
+let _gerenciaDataLoaded = false;
+
 function initGerencia() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-gerencia').classList.add('active');
@@ -1614,12 +2197,22 @@ function initGerencia() {
   if (gerenciaListenerA) { gerenciaListenerA(); gerenciaListenerA = null; }
   if (gerenciaListenerB) { gerenciaListenerB(); gerenciaListenerB = null; }
 
+  // Loading state mientras llega el primer dato
+  _gerenciaDataLoaded = false;
+  const gerBody = document.querySelector('.ger-body');
+  if (gerBody) {
+    gerBody.dataset.loaded = 'false';
+  }
+  mostrarLoadingDashboard();
+
   let dataA = {}, dataB = {};
   const hoy = getFechaHoy();
+  _horasDiaSeleccionado = hoy;
 
   // Listeners del día actual
   gerenciaListenerA = refOrdenes('A').on('value', snap => {
     dataA = snap.val() || {};
+    ocultarLoadingDashboard();
     renderDashboard(dataA, dataB);
     cargarHistorico();
   });
@@ -1629,14 +2222,141 @@ function initGerencia() {
   });
 }
 
+function mostrarLoadingDashboard() {
+  const body = document.querySelector('.ger-body');
+  if (!body || _gerenciaDataLoaded) return;
+  const existing = document.getElementById('dash-loading-overlay');
+  if (existing) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'dash-loading-overlay';
+  overlay.className = 'dash-loading';
+  overlay.innerHTML = '<div class="dash-spinner"></div><p>Cargando métricas en tiempo real...</p>';
+  body.prepend(overlay);
+}
+
+function ocultarLoadingDashboard() {
+  _gerenciaDataLoaded = true;
+  const overlay = document.getElementById('dash-loading-overlay');
+  if (overlay) overlay.remove();
+}
+
 // ── Cargar histórico de todos los días
 function cargarHistorico() {
   db.ref('ordenes').once('value').then(snap => {
     const todos = snap.val() || {};
     const dias = Object.keys(todos).sort();
     const hoy  = getFechaHoy();
+    _horasDataCache = todos;
     renderHistorico(todos, dias, hoy);
+    renderSelectorDias(dias, hoy);
+    renderVentaPorHoras(_horasDiaSeleccionado || hoy);
   });
+}
+
+// ── Selector de día para venta por horas
+function renderSelectorDias(dias, hoy) {
+  const wrap = document.getElementById('horas-day-selector');
+  if (!wrap) return;
+  const diasOrdenados = [...dias].sort().reverse();
+  if (diasOrdenados.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--text3);font-size:12px">Sin días registrados</p>';
+    return;
+  }
+  wrap.innerHTML = diasOrdenados.map(dia => {
+    const label = dia === hoy ? 'Hoy' : dia.slice(5); // MM-DD
+    const active = dia === _horasDiaSeleccionado ? ' active' : '';
+    return `<button class="horas-day-pill${active}" onclick="seleccionarDiaHoras('${dia}')">${label}</button>`;
+  }).join('');
+}
+
+function seleccionarDiaHoras(dia) {
+  _horasDiaSeleccionado = dia;
+  document.querySelectorAll('.horas-day-pill').forEach(b => b.classList.remove('active'));
+  renderSelectorDias(Object.keys(_horasDataCache), getFechaHoy());
+  renderVentaPorHoras(dia);
+}
+
+// ── Renderizar gráfica + tabla de venta por horas para un día específico
+function renderVentaPorHoras(dia) {
+  const diaData = _horasDataCache[dia] || {};
+  const allA = Object.values(diaData.A || {});
+  const allB = Object.values(diaData.B || {});
+  const combined = [...allA, ...allB];
+
+  // Deduplicar por numComanda para no contar bebidas AB dos veces
+  const seen = new Set();
+  const unique = combined.filter(o => {
+    if (seen.has(o.numComanda)) return false;
+    seen.add(o.numComanda); return true;
+  });
+
+  // Agrupar por hora (0-23)
+  const porHora = {};
+  for (let h = 0; h < 24; h++) porHora[h] = { ordenes: 0, venta: 0 };
+
+  unique.forEach(o => {
+    if (!o.timestamp) return;
+    const colTime = new Date(o.timestamp - (5 * 60 * 60 * 1000));
+    const h = colTime.getUTCHours();
+    porHora[h].ordenes += 1;
+  });
+
+  // Venta se calcula sobre combined (incluye ambos módulos, no deduplicado, porque cada módulo vendió su parte)
+  combined.forEach(o => {
+    if (!o.timestamp) return;
+    const colTime = new Date(o.timestamp - (5 * 60 * 60 * 1000));
+    const h = colTime.getUTCHours();
+    porHora[h].venta += calcVentaOrden(o.items);
+  });
+
+  // Filtrar solo horas con actividad (rango del evento) o mostrar todas si no hay datos
+  const horasConDatos = Object.keys(porHora).map(Number).filter(h => porHora[h].ordenes > 0 || porHora[h].venta > 0);
+  const horasActivas = horasConDatos.length > 0
+    ? Array.from({length: Math.max(...horasConDatos) - Math.min(...horasConDatos) + 1}, (_, i) => Math.min(...horasConDatos) + i)
+    : [];
+
+  const maxVenta = Math.max(...horasActivas.map(h => porHora[h].venta), 1);
+  const picoHora = horasActivas.length > 0
+    ? horasActivas.reduce((max, h) => porHora[h].venta > porHora[max].venta ? h : max, horasActivas[0])
+    : null;
+
+  // Gráfica de barras
+  const chartWrap = document.getElementById('horas-chart');
+  if (chartWrap) {
+    if (horasActivas.length === 0) {
+      chartWrap.innerHTML = '<p style="color:var(--text3);font-size:13px;margin:auto">Sin actividad registrada este día</p>';
+    } else {
+      chartWrap.innerHTML = horasActivas.map(h => {
+        const d = porHora[h];
+        const heightPct = Math.max(Math.round((d.venta / maxVenta) * 100), d.venta > 0 ? 8 : 2);
+        const empty = d.venta === 0 ? ' empty' : '';
+        return `<div class="horas-bar-col">
+          <div class="horas-bar-fill${empty}" style="height:${heightPct}%" title="${formatCOP(d.venta)}"></div>
+          <span class="horas-bar-label">${h.toString().padStart(2,'0')}h</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Tabla detallada
+  const tbody = document.getElementById('horas-tabla-body');
+  if (tbody) {
+    if (horasActivas.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3)">Sin datos</td></tr>';
+    } else {
+      tbody.innerHTML = horasActivas.map(h => {
+        const d = porHora[h];
+        const ticket = d.ordenes > 0 ? d.venta / d.ordenes : 0;
+        const esPico = h === picoHora && d.venta > 0;
+        return `<tr class="${esPico ? 'pico-row' : ''}">
+          <td>${h.toString().padStart(2,'0')}:00${esPico ? ' 🔥' : ''}</td>
+          <td>${d.ordenes}</td>
+          <td>${formatCOP(d.venta)}</td>
+          <td>${formatCOP(ticket)}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
 }
 
 function renderHistorico(todos, dias, hoy) {
