@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Migración Firebase — Comandas</title>
+<style>
+  body { font-family: monospace; background: #0f0f0f; color: #f0efe8; padding: 24px; }
+  h2 { color: #FFB703; margin-bottom: 16px; }
+  #log { background: #1a1a18; border: 1px solid #333; border-radius: 8px; padding: 16px; min-height: 200px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; }
+  button { padding: 12px 24px; background: #D85A30; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+  button:disabled { background: #555; cursor: not-allowed; }
+  .ok  { color: #A8F04D; }
+  .err { color: #E24B4A; }
+  .info{ color: #FFB703; }
+</style>
+</head>
+<body>
+<h2>🔧 Migración de datos — uso único</h2>
+<div id="log">Listo para migrar. Presiona el botón para comenzar.\n</div>
+<button id="btn" onclick="migrar()">Ejecutar migración</button>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD5yiwqiPkEBQlzUv1jBA9F-4ZQwQmS8yk",
+  authDomain: "comandas-evento-220b2.firebaseapp.com",
+  databaseURL: "https://comandas-evento-220b2-default-rtdb.firebaseio.com",
+  projectId: "comandas-evento-220b2",
+  storageBucket: "comandas-evento-220b2.firebasestorage.app",
+  messagingSenderId: "15805581438",
+  appId: "1:15805581438:web:19821e618b4e0e48c8702f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function log(msg, tipo) {
+  const el = document.getElementById('log');
+  el.innerHTML += `<span class="${tipo||''}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function migrar() {
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  btn.textContent = 'Migrando...';
+  log('Leyendo datos de Firebase...', 'info');
+
+  try {
+    const snap = await db.ref('/').once('value');
+    const root = snap.val() || {};
+    const batch = {};
+    const toDelete = {};
+    let count = 0;
+
+    Object.entries(root).forEach(([key, val]) => {
+      // Solo nodos que sean órdenes reales
+      if (!val || !val.timestamp || !val.cliente) return;
+
+      // Calcular fecha en zona Colombia (UTC-5)
+      const dt = new Date(val.timestamp - (5 * 60 * 60 * 1000));
+      const fecha = dt.toISOString().slice(0, 10);
+
+      // Detectar módulo por items
+      const items = Array.isArray(val.items) ? val.items : Object.values(val.items || {});
+      const nombres = items.map(i => (i.nombre || '').toLowerCase()).join(' ');
+      const esB = nombres.includes('perro') || nombres.includes('batido') ||
+                  nombres.includes('choripán') || nombres.includes('choripan');
+      const modulo = esB ? 'B' : 'A';
+
+      batch[`ordenes/${fecha}/${modulo}/${key}`] = val;
+      toDelete[key] = null;
+      count++;
+      log(`✓ #${val.numComanda} → ${fecha}/${modulo} — cliente: ${val.cliente}`, 'ok');
+    });
+
+    if (count === 0) {
+      log('No se encontraron órdenes para migrar en la raíz.', 'info');
+      btn.textContent = 'Sin datos para migrar';
+      return;
+    }
+
+    log(`\nTotal encontrado: ${count} órdenes`, 'info');
+    log('Escribiendo en nueva estructura...', 'info');
+
+    await db.ref('/').update(batch);
+    log('Nueva estructura creada ✓', 'ok');
+
+    log('Eliminando nodos viejos de la raíz...', 'info');
+    await db.ref('/').update(toDelete);
+    log('Nodos viejos eliminados ✓', 'ok');
+
+    log('\n✅ MIGRACIÓN COMPLETADA — ya puedes cerrar esta página.', 'ok');
+    btn.textContent = '✅ Completado';
+
+  } catch (err) {
+    log('❌ Error: ' + err.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Reintentar';
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
