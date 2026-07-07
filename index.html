@@ -1166,6 +1166,7 @@
   <div class="ger-tabs">
     <button class="ger-tab active" onclick="cambiarTabGerencia('evento', this)">Evento</button>
     <button class="ger-tab" onclick="cambiarTabGerencia('general', this)">Venta General</button>
+    <button class="ger-tab" onclick="cambiarTabGerencia('icg-horas', this)">ICG x Hora</button>
   </div>
 
   <div id="ger-pane-evento" class="ger-pane active">
@@ -1427,6 +1428,56 @@
     </div>
     <button class="popup-cancel" onclick="cancelarPopup()">Cancelar</button>
   </div>
+
+  <div id="ger-pane-icg-horas" class="ger-pane">
+  <div class="ger-body" style="padding-top:0">
+
+    <div class="ger-section">
+      <p class="ger-title">Venta real ICG por hora</p>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:14px">
+        Basado en el último reporte cargado. Selecciona el día a analizar.
+      </p>
+      <div class="horas-selector" id="icg-day-selector"></div>
+      <div id="icg-no-data" style="display:none;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px">
+        Sin reporte ICG cargado. Ve a "Venta General" y sube el archivo.
+      </div>
+      <div id="icg-horas-content" style="display:none">
+        <div class="stat-grid" style="margin-bottom:16px">
+          <div class="stat-card blue">
+            <p class="stat-label">Venta del día</p>
+            <p class="stat-val" id="icg-h-venta">$0</p>
+            <p class="stat-sub" id="icg-h-dia">—</p>
+          </div>
+          <div class="stat-card gold">
+            <p class="stat-label">Hora pico</p>
+            <p class="stat-val" id="icg-h-pico">—</p>
+            <p class="stat-sub" id="icg-h-pico-venta">—</p>
+          </div>
+        </div>
+        <div class="horas-chart" id="icg-chart-horas"></div>
+        <div class="horas-table-wrap" style="margin-top:12px">
+          <table class="horas-table">
+            <thead><tr><th>Hora</th><th>Facturas</th><th>Venta</th><th>% del día</th></tr></thead>
+            <tbody id="icg-tabla-horas"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Comparativo: Sistema vs ICG</p>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:14px">
+        Venta registrada en comandas vs venta real cobrada en ICG.
+      </p>
+      <div id="icg-comparativo">
+        <p style="color:var(--text3);font-size:13px">Carga el reporte ICG para ver el comparativo.</p>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+</div>
 </div>
 
 <!-- HISTORIAL DE CAJA -->
@@ -1509,6 +1560,7 @@ let ordenesListener = null;
 let todasOrdenes = {};
 let gerenciaListenerA = null;
 let gerenciaListenerB = null;
+let _gerenciaOrdenesListener = null;  // listener global /ordenes
 let _localCounter = null;
 let _tickInterval = null;
 let _prevPendingKeys = new Set();
@@ -1623,6 +1675,10 @@ function logout() {
   if (_tickInterval)   { clearInterval(_tickInterval); _tickInterval = null; }
   if (_historialListenerA) { _historialListenerA(); _historialListenerA = null; }
   if (_historialListenerB) { _historialListenerB(); _historialListenerB = null; }
+  if (_gerenciaOrdenesListener) {
+    db.ref('ordenes').off('value', _gerenciaOrdenesListener);
+    _gerenciaOrdenesListener = null;
+  }
   currentRole = null;
   cart = {};
   todasOrdenes = {};
@@ -1960,7 +2016,145 @@ function cambiarTabGerencia(tab, el) {
   el.classList.add('active');
   document.getElementById('ger-pane-evento').classList.toggle('active', tab === 'evento');
   document.getElementById('ger-pane-general').classList.toggle('active', tab === 'general');
+  const icgPane = document.getElementById('ger-pane-icg-horas');
+  if (icgPane) icgPane.classList.toggle('active', tab === 'icg-horas');
   if (tab === 'general') cargarVentaGeneralGuardada();
+  if (tab === 'icg-horas') cargarICGxHora();
+}
+
+// ── ICG x Hora ──
+let _icgData = null;
+let _icgDiaSeleccionado = null;
+
+function cargarICGxHora() {
+  db.ref('venta_general').once('value').then(snap => {
+    const data = snap.val();
+    if (!data || !data.porDia) {
+      document.getElementById('icg-no-data').style.display = 'block';
+      document.getElementById('icg-horas-content').style.display = 'none';
+      document.getElementById('icg-comparativo').innerHTML =
+        '<p style="color:var(--text3);font-size:13px">Sin datos ICG disponibles.</p>';
+      return;
+    }
+    _icgData = data;
+    const dias = Object.keys(data.porDia).sort().reverse();
+    _icgDiaSeleccionado = _icgDiaSeleccionado || dias[0];
+    renderSelectorICG(dias);
+    renderICGxHora(_icgDiaSeleccionado);
+    renderComparativo();
+  });
+}
+
+function renderSelectorICG(dias) {
+  const wrap = document.getElementById('icg-day-selector');
+  if (!wrap) return;
+  wrap.innerHTML = dias.map(d => {
+    const active = d === _icgDiaSeleccionado ? ' active' : '';
+    return `<button class="horas-day-pill${active}" onclick="seleccionarDiaICG('${d}')">${d.slice(5)}</button>`;
+  }).join('');
+}
+
+function seleccionarDiaICG(dia) {
+  _icgDiaSeleccionado = dia;
+  document.querySelectorAll('#icg-day-selector .horas-day-pill').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderICGxHora(dia);
+}
+
+function renderICGxHora(dia) {
+  if (!_icgData) return;
+  document.getElementById('icg-no-data').style.display = 'none';
+  document.getElementById('icg-horas-content').style.display = 'block';
+
+  const diaData = _icgData.porDia[dia] || { venta: 0, facturas: 0 };
+  setText('icg-h-venta', formatCOP(diaData.venta));
+  setText('icg-h-dia', dia);
+
+  // Filtrar porHora — el reporte ICG trae acumulado total, no por día
+  // Mostramos distribución proporcional del día basada en el total de horas
+  const porHora = _icgData.porHora || {};
+  const horas = Object.keys(porHora).map(Number).sort((a,b) => a-b);
+  const totalHoras = horas.reduce((s,h) => s + (porHora[h]||0), 0);
+
+  // Distribuir la venta del día proporcionalmente según las horas del reporte
+  const horasDelDia = {};
+  horas.forEach(h => {
+    const prop = totalHoras > 0 ? (porHora[h] / totalHoras) : 0;
+    horasDelDia[h] = Math.round(diaData.venta * prop);
+  });
+
+  const maxH = Math.max(...horas.map(h => horasDelDia[h]), 1);
+  const picoH = horas.reduce((max, h) => horasDelDia[h] > horasDelDia[max] ? h : max, horas[0]);
+
+  setText('icg-h-pico', picoH !== undefined ? picoH.toString().padStart(2,'0') + ':00' : '—');
+  setText('icg-h-pico-venta', picoH !== undefined ? formatCOP(horasDelDia[picoH]) : '—');
+
+  // Gráfica
+  const chart = document.getElementById('icg-chart-horas');
+  chart.innerHTML = horas.map(h => {
+    const v = horasDelDia[h];
+    const hgt = Math.max(Math.round((v/maxH)*100), 3);
+    const esPico = h === picoH;
+    return `<div class="horas-bar-col">
+      <div class="horas-bar-fill${esPico ? '' : ' blue'}" style="height:${hgt}%" title="${formatCOP(v)}"></div>
+      <span class="horas-bar-label">${h.toString().padStart(2,'0')}h</span>
+    </div>`;
+  }).join('');
+
+  // Tabla
+  const tbody = document.getElementById('icg-tabla-horas');
+  tbody.innerHTML = horas.map(h => {
+    const v = horasDelDia[h];
+    const pct = diaData.venta > 0 ? Math.round((v/diaData.venta)*100) : 0;
+    const esPico = h === picoH;
+    return `<tr${esPico ? ' class="pico-row"' : ''}>
+      <td>${h.toString().padStart(2,'0')}:00${esPico ? ' 🔥' : ''}</td>
+      <td>—</td>
+      <td>${formatCOP(v)}</td>
+      <td>${pct}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderComparativo() {
+  if (!_icgData) return;
+  const wrap = document.getElementById('icg-comparativo');
+
+  // Venta del sistema por día (del histórico de órdenes)
+  const diasICG = Object.keys(_icgData.porDia).sort().reverse().slice(0, 7);
+
+  wrap.innerHTML = `
+    <div class="vg-table-wrap">
+      <table class="vg-table">
+        <thead><tr>
+          <th>Día</th>
+          <th>Sistema (est.)</th>
+          <th>ICG (real)</th>
+          <th>Diferencia</th>
+        </tr></thead>
+        <tbody>
+          ${diasICG.map(dia => {
+            const icgVenta = _icgData.porDia[dia]?.venta || 0;
+            // Buscar venta del sistema para ese día en el histórico
+            const diaOrden = _horasDataCache[dia] || {};
+            const allA = Object.values(diaOrden['A'] || {});
+            const allB = Object.values(diaOrden['B'] || {});
+            const sistVenta = [...allA, ...allB].reduce((s,o) => s + calcVentaOrden(o.items), 0);
+            const diff = icgVenta - sistVenta;
+            const diffColor = diff >= 0 ? '#A8F04D' : '#E24B4A';
+            return `<tr>
+              <td>${dia}</td>
+              <td>${formatCOP(sistVenta)}</td>
+              <td>${formatCOP(icgVenta)}</td>
+              <td style="color:${diffColor};font-weight:700">${diff >= 0 ? '+' : ''}${formatCOP(diff)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:8px">
+      * La venta del sistema es estimada con precios de lista. ICG refleja precios reales cobrados.
+    </p>`;
 }
 
 function procesarArchivoVentaGeneral(event) {
@@ -2199,8 +2393,13 @@ function initGerencia() {
   document.getElementById('screen-gerencia').classList.add('active');
   window.scrollTo(0,0);
 
+  // Cancelar listeners previos antes de crear nuevos
   if (gerenciaListenerA) { gerenciaListenerA(); gerenciaListenerA = null; }
   if (gerenciaListenerB) { gerenciaListenerB(); gerenciaListenerB = null; }
+  if (_gerenciaOrdenesListener) {
+    db.ref('ordenes').off('value', _gerenciaOrdenesListener);
+    _gerenciaOrdenesListener = null;
+  }
 
   _gerenciaDataLoaded = false;
   mostrarLoadingDashboard();
@@ -2208,15 +2407,14 @@ function initGerencia() {
   const hoy = getFechaHoy();
   _horasDiaSeleccionado = hoy;
 
-  // Cargar TODOS los días del histórico para el dashboard
-  // El listener escucha el nodo /ordenes completo en tiempo real
-  db.ref('ordenes').on('value', snap => {
+  // Guardar referencia del listener para poder cancelarlo después
+  _gerenciaOrdenesListener = db.ref('ordenes').on('value', snap => {
     const todosLosDias = snap.val() || {};
 
     // Datos de HOY para el dashboard principal
     const diaHoy = todosLosDias[hoy] || {};
-    const dataA = diaHoy['A'] || {};
-    const dataB = diaHoy['B'] || {};
+    const dataA  = diaHoy['A'] || {};
+    const dataB  = diaHoy['B'] || {};
 
     ocultarLoadingDashboard();
     renderDashboard(dataA, dataB);
