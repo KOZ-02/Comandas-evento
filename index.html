@@ -1679,6 +1679,10 @@ function logout() {
     db.ref('ordenes').off('value', _gerenciaOrdenesListener);
     _gerenciaOrdenesListener = null;
   }
+  if (window._gerenciaInterval) {
+    clearInterval(window._gerenciaInterval);
+    window._gerenciaInterval = null;
+  }
   currentRole = null;
   cart = {};
   todasOrdenes = {};
@@ -2393,12 +2397,20 @@ function initGerencia() {
   document.getElementById('screen-gerencia').classList.add('active');
   window.scrollTo(0,0);
 
-  // Cancelar listeners previos antes de crear nuevos
+  // Cancelar todo lo anterior
   if (gerenciaListenerA) { gerenciaListenerA(); gerenciaListenerA = null; }
   if (gerenciaListenerB) { gerenciaListenerB(); gerenciaListenerB = null; }
   if (_gerenciaOrdenesListener) {
     db.ref('ordenes').off('value', _gerenciaOrdenesListener);
     _gerenciaOrdenesListener = null;
+  }
+  if (window._gerenciaInterval) {
+    clearInterval(window._gerenciaInterval);
+    window._gerenciaInterval = null;
+  }
+  if (window._gerenciaInterval) {
+    clearInterval(window._gerenciaInterval);
+    window._gerenciaInterval = null;
   }
 
   _gerenciaDataLoaded = false;
@@ -2407,25 +2419,37 @@ function initGerencia() {
   const hoy = getFechaHoy();
   _horasDiaSeleccionado = hoy;
 
-  // Guardar referencia del listener para poder cancelarlo después
-  _gerenciaOrdenesListener = db.ref('ordenes').on('value', snap => {
-    const todosLosDias = snap.val() || {};
+  // Usar once() para la carga inicial — más confiable que on() para datos grandes
+  function cargarTodo() {
+    db.ref('ordenes').once('value').then(snap => {
+      const todosLosDias = snap.val() || {};
+      const diaHoy = todosLosDias[hoy] || {};
+      const dataA  = diaHoy['A'] || {};
+      const dataB  = diaHoy['B'] || {};
 
-    // Datos de HOY para el dashboard principal
-    const diaHoy = todosLosDias[hoy] || {};
-    const dataA  = diaHoy['A'] || {};
-    const dataB  = diaHoy['B'] || {};
+      ocultarLoadingDashboard();
+      renderDashboard(dataA, dataB);
 
-    ocultarLoadingDashboard();
-    renderDashboard(dataA, dataB);
+      const dias = Object.keys(todosLosDias).sort();
+      _horasDataCache = todosLosDias;
+      renderHistorico(todosLosDias, dias, hoy);
+      renderSelectorDias(dias, hoy);
+      renderVentaPorHoras(_horasDiaSeleccionado || hoy);
+    }).catch(err => {
+      console.error('Error cargando gerencia:', err);
+      ocultarLoadingDashboard();
+    });
+  }
 
-    // Histórico usa todos los días
-    const dias = Object.keys(todosLosDias).sort();
-    _horasDataCache = todosLosDias;
-    renderHistorico(todosLosDias, dias, hoy);
-    renderSelectorDias(dias, hoy);
-    renderVentaPorHoras(_horasDiaSeleccionado || hoy);
-  });
+  // Carga inicial inmediata
+  cargarTodo();
+
+  // Actualizar cada 30 segundos mientras gerencia esté abierta
+  window._gerenciaInterval = setInterval(() => {
+    if (document.getElementById('screen-gerencia').classList.contains('active')) {
+      cargarTodo();
+    }
+  }, 30000);
 }
 
 function mostrarLoadingDashboard() {
