@@ -2321,75 +2321,121 @@ function cargarReconciliacion() {
   });
 }
 
+function calcSistemaParaDias(diasFiltro) {
+  // Acumula venta y unidades del sistema SOLO para los días en diasFiltro
+  let venta = 0;
+  const uds = {};
+  diasFiltro.forEach(function(dia) {
+    const diaData = _horasDataCache[dia] || {};
+    const all = [...Object.values(diaData['A']||{}), ...Object.values(diaData['B']||{})];
+    // Deduplicar por numComanda para no contar bebidas AB dos veces
+    const seen = new Set();
+    all.forEach(function(o) {
+      if (!seen.has(o.numComanda)) {
+        seen.add(o.numComanda);
+        venta += calcVentaOrden(o.items);
+      }
+      // Unidades: contar siempre (cada módulo entregó sus ítems)
+      (o.items||[]).forEach(function(item) {
+        uds[item.nombre] = (uds[item.nombre]||0) + (item.qty||1);
+      });
+    });
+  });
+  return { venta, uds };
+}
+
 function renderReconciliacion(icg) {
   document.getElementById('recon-content').style.display = 'block';
 
-  // Totales ICG
-  setText('rc-bruto', formatCOP(icg.ventaBruta));
-  setText('rc-anul',  '-' + formatCOP(icg.anulaciones));
-  setText('rc-neto',  formatCOP(icg.ventaNeta));
+  // Días comunes entre ICG y sistema
+  const diasICG    = Object.keys(icg.porDia).sort();
+  const diasSist   = Object.keys(_horasDataCache).sort();
+  const diasComunes = diasICG.filter(function(d) { return diasSist.indexOf(d) >= 0; });
+  const diasSoloICG = diasICG.filter(function(d) { return diasSist.indexOf(d) < 0; });
 
-  // Venta sistema (acumular todos los días)
-  let ventaSistema = 0;
-  Object.values(_horasDataCache).forEach(function(diaData) {
-    const all = [...Object.values(diaData['A']||{}), ...Object.values(diaData['B']||{})];
-    all.forEach(function(o) { ventaSistema += calcVentaOrden(o.items); });
-  });
+  // Totales ICG solo para días comunes
+  const icgNetoCom = diasComunes.reduce(function(s,d) { return s + (icg.porDia[d].ventaNeta||0); }, 0);
+  const icgBrutoCom = diasComunes.reduce(function(s,d) { return s + (icg.porDia[d].ventaBruta||0); }, 0);
+  const icgAnulCom  = diasComunes.reduce(function(s,d) { return s + (icg.porDia[d].anulaciones||0); }, 0);
 
-  setText('rc-sist', formatCOP(ventaSistema));
+  // Totales sistema para días comunes (deduplicado)
+  const { venta: ventaSistema, uds: sistUds } = calcSistemaParaDias(diasComunes);
 
-  const diff = icg.ventaNeta - ventaSistema;
+  // Hero — mostrar totales del periodo comparable
+  setText('rc-bruto', formatCOP(icgBrutoCom));
+  setText('rc-anul',  '-' + formatCOP(icgAnulCom));
+  setText('rc-neto',  formatCOP(icgNetoCom));
+  setText('rc-sist',  formatCOP(ventaSistema));
+
+  const diff = icgNetoCom - ventaSistema;
   const diffEl = document.getElementById('rc-diff');
   diffEl.textContent = (diff >= 0 ? '+' : '') + formatCOP(diff);
   diffEl.className = 'recon-diff-val ' + (diff >= 0 ? 'diff-pos' : 'diff-neg');
 
-  const cobertura = icg.ventaNeta > 0 ? Math.round((ventaSistema / icg.ventaNeta) * 100) : 0;
+  const cobertura = icgNetoCom > 0 ? Math.round((ventaSistema / icgNetoCom) * 100) : 0;
   const cobEl = document.getElementById('rc-cobertura');
   cobEl.textContent = cobertura + '%';
   cobEl.className = 'recon-diff-val ' + (cobertura >= 90 ? 'diff-pos' : cobertura >= 70 ? 'diff-neu' : 'diff-neg');
 
-  // Por día
-  const diasICG = Object.keys(icg.porDia).sort().reverse();
+  // Aviso si hay días solo en ICG sin sistema
+  const avisoEl = document.getElementById('recon-aviso') || (function() {
+    const el = document.createElement('p');
+    el.id = 'recon-aviso';
+    el.style.cssText = 'font-size:11px;color:var(--text3);margin-bottom:12px;padding:8px 12px;background:var(--bg2);border-radius:8px;';
+    document.getElementById('recon-content').appendChild(el);
+    return el;
+  })();
+  avisoEl.textContent = 'Comparando ' + diasComunes.length + ' días en común'
+    + (diasSoloICG.length ? ' · ' + diasSoloICG.length + ' días en ICG sin comandas registradas' : '')
+    + ' · Rango ICG: ' + (icg.fechaMin||'—') + ' → ' + (icg.fechaMax||'—');
+
+  // Tabla por día — solo días comunes, orden desc
   const porDiaSec = document.getElementById('recon-por-dia-sec');
   const porDiaWrap = document.getElementById('recon-por-dia');
   porDiaSec.style.display = 'block';
 
+  const filasComunes = diasComunes.slice().reverse().map(function(dia) {
+    const icgNeto = icg.porDia[dia].ventaNeta || 0;
+    const diaData = _horasDataCache[dia] || {};
+    const all = [...Object.values(diaData['A']||{}), ...Object.values(diaData['B']||{})];
+    const seen2 = new Set();
+    const sist = all.reduce(function(s,o) {
+      if (seen2.has(o.numComanda)) return s;
+      seen2.add(o.numComanda);
+      return s + calcVentaOrden(o.items);
+    }, 0);
+    const df   = icgNeto - sist;
+    const pct  = icgNeto > 0 ? Math.round((sist/icgNeto)*100) : 0;
+    const dfColor  = df >= 0 ? '#A8F04D' : '#E24B4A';
+    const pctColor = pct >= 90 ? '#A8F04D' : pct >= 70 ? '#FFB703' : '#E24B4A';
+    return '<tr>'
+      + '<td>' + dia + '</td>'
+      + '<td>' + formatCOP(icgNeto) + '</td>'
+      + '<td>' + formatCOP(sist) + '</td>'
+      + '<td style="color:' + dfColor + ';font-weight:700">' + (df>=0?'+':'') + formatCOP(df) + '</td>'
+      + '<td style="color:' + pctColor + ';font-weight:700">' + pct + '%</td>'
+      + '</tr>';
+  });
+
+  // Días en ICG sin sistema (gris)
+  const filasSoloICG = diasSoloICG.slice().reverse().map(function(dia) {
+    const icgNeto = icg.porDia[dia].ventaNeta || 0;
+    return '<tr style="opacity:.5">'
+      + '<td>' + dia + ' <span style="font-size:10px;color:#FFB703">(sin comandas)</span></td>'
+      + '<td>' + formatCOP(icgNeto) + '</td>'
+      + '<td>—</td><td>—</td><td>—</td>'
+      + '</tr>';
+  });
+
   porDiaWrap.innerHTML = '<div class="vg-table-wrap"><table class="vg-table">'
     + '<thead><tr><th>Día</th><th>ICG Neto</th><th>Sistema</th><th>Diferencia</th><th>%</th></tr></thead>'
-    + '<tbody>'
-    + diasICG.map(function(dia) {
-        const icgNeto = icg.porDia[dia].ventaNeta || 0;
-        const diaOrden = _horasDataCache[dia] || {};
-        const all = [...Object.values(diaOrden['A']||{}), ...Object.values(diaOrden['B']||{})];
-        const sist = all.reduce(function(s,o){ return s + calcVentaOrden(o.items); }, 0);
-        const df = icgNeto - sist;
-        const pct = icgNeto > 0 ? Math.round((sist/icgNeto)*100) : 0;
-        const dfColor = df >= 0 ? '#A8F04D' : '#E24B4A';
-        const pctColor = pct >= 90 ? '#A8F04D' : pct >= 70 ? '#FFB703' : '#E24B4A';
-        return '<tr>'
-          + '<td>' + dia + '</td>'
-          + '<td>' + formatCOP(icgNeto) + '</td>'
-          + '<td>' + formatCOP(sist) + '</td>'
-          + '<td style="color:' + dfColor + ';font-weight:700">' + (df>=0?'+':'') + formatCOP(df) + '</td>'
-          + '<td style="color:' + pctColor + ';font-weight:700">' + pct + '%</td>'
-          + '</tr>';
-      }).join('')
-    + '</tbody></table></div>';
+    + '<tbody>' + filasComunes.join('') + filasSoloICG.join('') + '</tbody>'
+    + '</table></div>';
 
-  // Por producto
-  const prodSec = document.getElementById('recon-prod-sec');
+  // Por producto — acumulado de días comunes
+  const prodSec  = document.getElementById('recon-prod-sec');
   const prodWrap = document.getElementById('recon-prod');
   prodSec.style.display = 'block';
-
-  // Acumular unidades del sistema
-  const sistUds = {};
-  Object.values(_horasDataCache).forEach(function(diaData) {
-    [...Object.values(diaData['A']||{}), ...Object.values(diaData['B']||{})].forEach(function(o) {
-      (o.items||[]).forEach(function(item) {
-        sistUds[item.nombre] = (sistUds[item.nombre]||0) + (item.qty||1);
-      });
-    });
-  });
 
   // Cruzar con ICG usando el mapa directo
   const rows = Object.entries(MAPA_PRODUCTOS).map(function([icgNombre, sistNombre]) {
