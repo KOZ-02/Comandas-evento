@@ -2261,7 +2261,11 @@ function renderICGxHora(dia) {
     const v = horasDelDia[h];
     const hgt = Math.max(Math.round((v/maxH)*100), 3);
     const esPico = h === picoH;
-    return '<div class="horas-bar-col">' + '<div class="horas-bar-fill${esPico ? '' : ' blue'}" style="height:' + hgt + '%"></div>' + '<span class="horas-bar-label">' + h.toString().padStart(2,'0') + 'h</span>' + '</div>';
+    const cls = esPico ? 'horas-bar-fill' : 'horas-bar-fill blue';
+    return '<div class="horas-bar-col">'
+      + '<div class="' + cls + '" style="height:' + hgt + '%"></div>'
+      + '<span class="horas-bar-label">' + h.toString().padStart(2,'0') + 'h</span>'
+      + '</div>';
   }).join('');
 
   // Tabla
