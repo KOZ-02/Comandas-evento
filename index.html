@@ -2028,7 +2028,10 @@ function cambiarTabGerencia(tab, el) {
   const icgPane = document.getElementById('ger-pane-icg-horas');
   if (icgPane) icgPane.classList.toggle('active', tab === 'icg-horas');
   if (tab === 'general') cargarVentaGeneralGuardada();
-  if (tab === 'icg-horas') cargarICGxHora();
+  if (tab === 'icg-horas') {
+    // Pequeño delay para que el DOM renderice el pane antes de poblarlo
+    setTimeout(cargarICGxHora, 50);
+  }
 }
 
 // ── ICG x Hora ──
