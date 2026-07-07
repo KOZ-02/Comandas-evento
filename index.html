@@ -2419,22 +2419,35 @@ function initGerencia() {
   const hoy = getFechaHoy();
   _horasDiaSeleccionado = hoy;
 
-  // Usar once() para la carga inicial — más confiable que on() para datos grandes
+  // Usar once() para la carga — más confiable que on() para datos grandes
   function cargarTodo() {
     db.ref('ordenes').once('value').then(snap => {
       const todosLosDias = snap.val() || {};
-      const diaHoy = todosLosDias[hoy] || {};
-      const dataA  = diaHoy['A'] || {};
-      const dataB  = diaHoy['B'] || {};
+      const dias = Object.keys(todosLosDias).sort();
+
+      // Acumular TODOS los días para el dashboard principal
+      // (no solo hoy — el evento puede tener datos de días anteriores)
+      const dataATodos = {}, dataBTodos = {};
+      dias.forEach(dia => {
+        const diaData = todosLosDias[dia] || {};
+        Object.assign(dataATodos, diaData['A'] || {});
+        Object.assign(dataBTodos, diaData['B'] || {});
+      });
+
+      // Si hay datos de hoy, usarlos como "vista de hoy"
+      // Si no, usar todos los datos disponibles
+      const diaHoy  = todosLosDias[hoy] || {};
+      const hayHoy  = Object.keys(diaHoy).length > 0;
+      const dataA   = hayHoy ? (diaHoy['A'] || {}) : dataATodos;
+      const dataB   = hayHoy ? (diaHoy['B'] || {}) : dataBTodos;
 
       ocultarLoadingDashboard();
       renderDashboard(dataA, dataB);
 
-      const dias = Object.keys(todosLosDias).sort();
       _horasDataCache = todosLosDias;
       renderHistorico(todosLosDias, dias, hoy);
       renderSelectorDias(dias, hoy);
-      renderVentaPorHoras(_horasDiaSeleccionado || hoy);
+      renderVentaPorHoras(_horasDiaSeleccionado || (dias.length ? dias[dias.length-1] : hoy));
     }).catch(err => {
       console.error('Error cargando gerencia:', err);
       ocultarLoadingDashboard();
