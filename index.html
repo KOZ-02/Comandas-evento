@@ -1560,8 +1560,12 @@ let ordenesListener = null;
 let todasOrdenes = {};
 let gerenciaListenerA = null;
 let gerenciaListenerB = null;
-let _gerenciaOrdenesListener = null;  // listener global /ordenes
+let _gerenciaOrdenesListener = null;
 let _gerenciaDataLoaded = false;
+let _horasDataCache = {};
+let _horasDiaSeleccionado = null;
+let _icgData = null;
+let _icgDiaSeleccionado = null;
 let _localCounter = null;
 let _tickInterval = null;
 let _prevPendingKeys = new Set();
@@ -2028,8 +2032,6 @@ function cambiarTabGerencia(tab, el) {
 }
 
 // ── ICG x Hora ──
-let _icgData = null;
-let _icgDiaSeleccionado = null;
 
 function cargarICGxHora() {
   db.ref('venta_general').once('value').then(snap => {
@@ -2274,9 +2276,21 @@ function procesarFilasICG(rows) {
   };
 }
 
+function sanitizarKeyFirebase(str) {
+  // Firebase no permite: . # $ / [ ]
+  return str.replace(/[.#$/\[\]]/g, '_').substring(0, 200);
+}
+
 function guardarVentaGeneral(procesado, nombreArchivo) {
   const statusEl = document.getElementById('vg-upload-status');
   procesado.nombreArchivo = nombreArchivo;
+
+  // Sanitizar claves de porProducto — Firebase rechaza . # $ / [ ]
+  const porProductoSanitizado = {};
+  Object.entries(procesado.porProducto || {}).forEach(([k, v]) => {
+    porProductoSanitizado[sanitizarKeyFirebase(k)] = v;
+  });
+  procesado.porProducto = porProductoSanitizado;
 
   db.ref('venta_general').set(procesado).then(() => {
     statusEl.textContent = '✓ Reporte cargado correctamente';
@@ -2388,8 +2402,6 @@ function cancelarOrden(key, numComanda) {
 // ═══════════════════════════════════════════
 // GERENCIA
 // ═══════════════════════════════════════════
-let _horasDataCache = {};      // cache de todos los días para venta por horas
-let _horasDiaSeleccionado = null;
 
 
 function initGerencia() {
