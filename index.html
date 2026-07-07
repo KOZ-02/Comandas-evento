@@ -2261,10 +2261,7 @@ function renderICGxHora(dia) {
     const v = horasDelDia[h];
     const hgt = Math.max(Math.round((v/maxH)*100), 3);
     const esPico = h === picoH;
-    return `<div class="horas-bar-col">
-      <div class="horas-bar-fill${esPico ? '' : ' blue'}" style="height:${hgt}%" title="${formatCOP(v)}"></div>
-      <span class="horas-bar-label">${h.toString().padStart(2,'0')}h</span>
-    </div>`;
+    return '<div class="horas-bar-col">' + '<div class="horas-bar-fill${esPico ? '' : ' blue'}" style="height:' + hgt + '%"></div>' + '<span class="horas-bar-label">' + h.toString().padStart(2,'0') + 'h</span>' + '</div>';
   }).join('');
 
   // Tabla
@@ -2469,19 +2466,21 @@ function cerrarExport() {
 
 function descargarPDF(texto, fecha) {
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head>
-    <meta charset="UTF-8">
-    <title>Resumen ${fecha}</title>
-    <style>
-      body{font-family:sans-serif;max-width:600px;margin:40px auto;padding:20px;color:#111;}
-      pre{white-space:pre-wrap;font-family:sans-serif;font-size:14px;line-height:1.8;}
-      h1{font-size:18px;color:#333;border-bottom:2px solid #FFB703;padding-bottom:8px;}
-    </style>
-  </head><body>
-    <h1>Resumen Fan Fest — ${fecha}</h1>
-    <pre>${texto.replace(/\*/g,'').replace(/_/g,'')}</pre>
-    <script>window.onload=()=>window.print();</script>
-  </body></html>`);
+  const textoLimpio = texto.replace(/\*/g,'').replace(/_/g,'');
+  const partes = [
+    '<!DOCTYPE html><html><head>',
+    '<meta charset="UTF-8">',
+    '<title>Resumen ' + fecha + '</title>',
+    '<style>body{font-family:sans-serif;max-width:600px;margin:40px auto;padding:20px;color:#111;}',
+    'pre{white-space:pre-wrap;font-family:sans-serif;font-size:14px;line-height:1.8;}',
+    'h1{font-size:18px;color:#333;border-bottom:2px solid #FFB703;padding-bottom:8px;}</style>',
+    '</head><body>',
+    '<h1>Resumen Fan Fest — ' + fecha + '</h1>',
+    '<pre>' + textoLimpio + '</pre>',
+    '<scr'+'ipt>window.onload=function(){window.print();}<'+'/scr'+'ipt>',
+    '</body></html>'
+  ];
+  win.document.write(partes.join(''));
   win.document.close();
 }
 
@@ -2529,28 +2528,28 @@ function renderCorrelacionProductos() {
     return;
   }
 
-  wrap.innerHTML = `
-    <div class="corr-row header">
-      <span>Producto</span>
-      <span style="text-align:right">Sistema</span>
-      <span style="text-align:right">ICG</span>
-      <span style="text-align:right">Ratio</span>
-    </div>
-    ${rows.map(r => {
-      const ratioClass = !r.pct ? '' : r.pct >= 90 ? 'pct-ok' : r.pct >= 70 ? 'pct-warn' : 'pct-bad';
-      const ratioText = r.pct !== null ? r.pct+'%' : '—';
-      const icgText = r.icgUds !== null ? r.icgUds : '—';
-      return `<div class="corr-row">
-        <span class="c-name">${r.nombre}</span>
-        <span class="c-num">${r.sistUds}</span>
-        <span class="c-num">${icgText}</span>
-        <span class="corr-pct ${ratioClass}">${ratioText}</span>
-      </div>`;
-    }).join('')}
-    <div style="padding:10px 12px;font-size:11px;color:var(--text3)">
-      Ratio = unidades sistema / unidades ICG. 100% = perfecta correlación.
-      Verde ≥90% · Amarillo ≥70% · Rojo &lt;70%
-    </div>`;
+  const header = '<div class="corr-row header"><span>Producto</span>'
+    + '<span style="text-align:right">Sistema</span>'
+    + '<span style="text-align:right">ICG</span>'
+    + '<span style="text-align:right">Ratio</span></div>';
+
+  const filas = rows.map(function(r) {
+    const ratioClass = !r.pct ? '' : r.pct >= 90 ? 'pct-ok' : r.pct >= 70 ? 'pct-warn' : 'pct-bad';
+    const ratioText  = r.pct !== null ? r.pct + '%' : '—';
+    const icgText    = r.icgUds !== null ? r.icgUds : '—';
+    return '<div class="corr-row">'
+      + '<span class="c-name">' + r.nombre + '</span>'
+      + '<span class="c-num">' + r.sistUds + '</span>'
+      + '<span class="c-num">' + icgText + '</span>'
+      + '<span class="corr-pct ' + ratioClass + '">' + ratioText + '</span>'
+      + '</div>';
+  }).join('');
+
+  const footer = '<div style="padding:10px 12px;font-size:11px;color:var(--text3)">'
+    + 'Ratio = unidades sistema / unidades ICG. 100% = perfecta correlación. '
+    + 'Verde ≥90% · Amarillo ≥70% · Rojo &lt;70%</div>';
+
+  wrap.innerHTML = header + filas + footer;
 }
 
 function renderComparativo() {
@@ -2560,38 +2559,28 @@ function renderComparativo() {
   // Venta del sistema por día (del histórico de órdenes)
   const diasICG = Object.keys(_icgData.porDia).sort().reverse().slice(0, 7);
 
-  wrap.innerHTML = `
-    <div class="vg-table-wrap">
-      <table class="vg-table">
-        <thead><tr>
-          <th>Día</th>
-          <th>Sistema (est.)</th>
-          <th>ICG (real)</th>
-          <th>Diferencia</th>
-        </tr></thead>
-        <tbody>
-          ${diasICG.map(dia => {
-            const icgVenta = _icgData.porDia[dia]?.venta || 0;
-            // Buscar venta del sistema para ese día en el histórico
-            const diaOrden = _horasDataCache[dia] || {};
-            const allA = Object.values(diaOrden['A'] || {});
-            const allB = Object.values(diaOrden['B'] || {});
-            const sistVenta = [...allA, ...allB].reduce((s,o) => s + calcVentaOrden(o.items), 0);
-            const diff = icgVenta - sistVenta;
-            const diffColor = diff >= 0 ? '#A8F04D' : '#E24B4A';
-            return `<tr>
-              <td>${dia}</td>
-              <td>${formatCOP(sistVenta)}</td>
-              <td>${formatCOP(icgVenta)}</td>
-              <td style="color:${diffColor};font-weight:700">${diff >= 0 ? '+' : ''}${formatCOP(diff)}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:11px;color:var(--text3);margin-top:8px">
-      * La venta del sistema es estimada con precios de lista. ICG refleja precios reales cobrados.
-    </p>`;
+  const filasComp = diasICG.map(function(dia) {
+    const icgVenta  = (_icgData.porDia[dia] && _icgData.porDia[dia].venta) || 0;
+    const diaOrden  = _horasDataCache[dia] || {};
+    const allA      = Object.values(diaOrden['A'] || {});
+    const allB      = Object.values(diaOrden['B'] || {});
+    const sistVenta = [...allA, ...allB].reduce(function(s,o){ return s + calcVentaOrden(o.items); }, 0);
+    const diff      = icgVenta - sistVenta;
+    const diffColor = diff >= 0 ? '#A8F04D' : '#E24B4A';
+    const signo     = diff >= 0 ? '+' : '';
+    return '<tr>'
+      + '<td>' + dia + '</td>'
+      + '<td>' + formatCOP(sistVenta) + '</td>'
+      + '<td>' + formatCOP(icgVenta)  + '</td>'
+      + '<td style="color:' + diffColor + ';font-weight:700">' + signo + formatCOP(diff) + '</td>'
+      + '</tr>';
+  }).join('');
+
+  wrap.innerHTML = '<div class="vg-table-wrap"><table class="vg-table">'
+    + '<thead><tr><th>Día</th><th>Sistema (est.)</th><th>ICG (real)</th><th>Diferencia</th></tr></thead>'
+    + '<tbody>' + filasComp + '</tbody>'
+    + '</table></div>'
+    + '<p style="font-size:11px;color:var(--text3);margin-top:8px">* La venta del sistema es estimada con precios de lista. ICG refleja precios reales cobrados.</p>';
 }
 
 function procesarArchivoVentaGeneral(event) {
@@ -2747,11 +2736,11 @@ function renderVentaGeneral(data) {
   metaEl.style.display = 'flex';
   const fechaCarga = new Date(data.cargadoEn);
   document.getElementById('vg-meta-fecha').textContent =
-    `${data.nombreArchivo || 'archivo'} — ${fechaCarga.toLocaleDateString('es-CO')} ${fechaCarga.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}`;
+    (data.nombreArchivo || 'archivo') + ' — ' + fechaCarga.toLocaleDateString('es-CO') + ' ' + fechaCarga.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
 
   // Resumen general
   setText('vg-total', formatCOP(data.ventaTotal));
-  setText('vg-rango', data.fechaMin === data.fechaMax ? data.fechaMin : `${data.fechaMin} a ${data.fechaMax}`);
+  setText('vg-rango', data.fechaMin === data.fechaMax ? data.fechaMin : (data.fechaMin + ' a ' + data.fechaMax));
   setText('vg-facturas', data.totalFacturas.toLocaleString('es-CO'));
   const ticketProm = data.totalFacturas > 0 ? data.ventaTotal / data.totalFacturas : 0;
   setText('vg-ticket', formatCOP(ticketProm));
@@ -2765,19 +2754,14 @@ function renderVentaGeneral(data) {
     const venta = data.porDia[d].venta;
     const h = Math.max(Math.round((venta/maxDiaVenta)*100), 4);
     const diaCorto = new Date(d + 'T12:00:00').toLocaleDateString('es-CO', {weekday:'short'});
-    return `<div class="horas-bar-col">
-      <div class="horas-bar-fill" style="height:${h}%" title="${formatCOP(venta)}"></div>
-      <span class="horas-bar-label">${diaCorto}</span>
-    </div>`;
+    return '<div class="horas-bar-col">'
+      + '<div class="horas-bar-fill" style="height:' + h + '%" title="' + formatCOP(venta) + '"></div>'
+      + '<span class="horas-bar-label">' + diaCorto + '</span>'
+      + '</div>';
   }).join('');
 
   const tablaDias = document.getElementById('vg-tabla-dias');
-  tablaDias.innerHTML = dias.map(d => `
-    <tr>
-      <td>${d}</td>
-      <td>${data.porDia[d].facturas}</td>
-      <td>${formatCOP(data.porDia[d].venta)}</td>
-    </tr>`).join('');
+  tablaDias.innerHTML = dias.map(function(d){return '<tr><td>'+d+'</td><td>'+data.porDia[d].facturas+'</td><td>'+formatCOP(data.porDia[d].venta)+'</td></tr>';}).join('');
 
   // Venta por hora acumulada
   const horas = Object.keys(data.porHora).map(Number).sort((a,b) => a-b);
@@ -2786,10 +2770,7 @@ function renderVentaGeneral(data) {
   chartHoras.innerHTML = horas.map(h => {
     const venta = data.porHora[h];
     const hgt = Math.max(Math.round((venta/maxHoraVenta)*100), 4);
-    return `<div class="horas-bar-col">
-      <div class="horas-bar-fill" style="height:${hgt}%" title="${formatCOP(venta)}"></div>
-      <span class="horas-bar-label">${h.toString().padStart(2,'0')}h</span>
-    </div>`;
+    return '<div class="horas-bar-col">' + '<div class="horas-bar-fill" style="height:' + hgt + '%"></div>' + '<span class="horas-bar-label">' + h.toString().padStart(2,'0') + 'h</span>' + '</div>';
   }).join('');
 
   // Top 15 productos
@@ -2797,12 +2778,10 @@ function renderVentaGeneral(data) {
     .sort((a,b) => b[1].venta - a[1].venta)
     .slice(0, 15);
   const tablaProd = document.getElementById('vg-tabla-productos');
-  tablaProd.innerHTML = productos.map(([nombre, d]) => `
-    <tr>
-      <td>${nombre}</td>
-      <td>${d.uds % 1 === 0 ? d.uds : d.uds.toFixed(2)}</td>
-      <td>${formatCOP(d.venta)}</td>
-    </tr>`).join('');
+  tablaProd.innerHTML = productos.map(function([nombre, d]) {
+    const udsStr = d.uds % 1 === 0 ? d.uds : d.uds.toFixed(2);
+    return '<tr><td>' + nombre + '</td><td>' + udsStr + '</td><td>' + formatCOP(d.venta) + '</td></tr>';
+  }).join('');
 }
 
 function cambiarStatus(key, newStatus) {
@@ -2815,7 +2794,7 @@ function cambiarStatus(key, newStatus) {
 }
 
 function confirmarCancelar(key, numComanda) {
-  if (confirm(`¿Cancelar la comanda #${numComanda}? Esta acción no se puede deshacer.`)) {
+  if (confirm('¿Cancelar la comanda #' + numComanda + '? Esta acción no se puede deshacer.')) {
     cancelarOrden(key, numComanda);
   }
 }
@@ -2825,7 +2804,7 @@ function cancelarOrden(key, numComanda) {
     status: 'cancelada',
     canceledAt: Date.now()
   }).then(() => {
-    showToast(`Comanda #${numComanda} cancelada`, false);
+    showToast('Comanda #' + numComanda + ' cancelada', false);
   }).catch(() => showToast('Error al cancelar. Revisa conexión.', false));
 }
 
@@ -2949,10 +2928,10 @@ function renderSelectorDias(dias, hoy) {
     wrap.innerHTML = '<p style="color:var(--text3);font-size:12px">Sin días registrados</p>';
     return;
   }
-  wrap.innerHTML = diasOrdenados.map(dia => {
-    const label = dia === hoy ? 'Hoy' : dia.slice(5); // MM-DD
+  wrap.innerHTML = diasOrdenados.map(function(dia) {
+    const label  = dia === hoy ? 'Hoy' : dia.slice(5);
     const active = dia === _horasDiaSeleccionado ? ' active' : '';
-    return `<button class="horas-day-pill${active}" onclick="seleccionarDiaHoras('${dia}')">${label}</button>`;
+    return '<button class="horas-day-pill' + active + '" onclick="seleccionarDiaHoras(\'' + dia + '\')">' + label + '</button>';
   }).join('');
 }
 
@@ -3017,10 +2996,7 @@ function renderVentaPorHoras(dia) {
         const d = porHora[h];
         const heightPct = Math.max(Math.round((d.venta / maxVenta) * 100), d.venta > 0 ? 8 : 2);
         const empty = d.venta === 0 ? ' empty' : '';
-        return `<div class="horas-bar-col">
-          <div class="horas-bar-fill${empty}" style="height:${heightPct}%" title="${formatCOP(d.venta)}"></div>
-          <span class="horas-bar-label">${h.toString().padStart(2,'0')}h</span>
-        </div>`;
+        return '<div class="horas-bar-col">' + '<div class="horas-bar-fill${empty}" style="height:' + heightPct + '%"></div>' + '<span class="horas-bar-label">' + h.toString().padStart(2,'0') + 'h</span>' + '</div>';
       }).join('');
     }
   }
@@ -3035,12 +3011,14 @@ function renderVentaPorHoras(dia) {
         const d = porHora[h];
         const ticket = d.ordenes > 0 ? d.venta / d.ordenes : 0;
         const esPico = h === picoHora && d.venta > 0;
-        return `<tr class="${esPico ? 'pico-row' : ''}">
-          <td>${h.toString().padStart(2,'0')}:00${esPico ? ' 🔥' : ''}</td>
-          <td>${d.ordenes}</td>
-          <td>${formatCOP(d.venta)}</td>
-          <td>${formatCOP(ticket)}</td>
-        </tr>`;
+        const rowClass = esPico ? 'pico-row' : '';
+        const horaStr = h.toString().padStart(2,'0') + ':00' + (esPico ? ' 🔥' : '');
+        return '<tr class="' + rowClass + '">'
+          + '<td>' + horaStr + '</td>'
+          + '<td>' + d.ordenes + '</td>'
+          + '<td>' + formatCOP(d.venta) + '</td>'
+          + '<td>' + formatCOP(ticket) + '</td>'
+          + '</tr>';
       }).join('');
     }
   }
@@ -3086,32 +3064,31 @@ function renderHistorico(todos, dias, hoy) {
 
   const maxVenta = Math.max(...filas.map(f => f.venta), 1);
 
-  wrap.innerHTML = filas.map(f => `
-    <div style="background:${f.esHoy ? 'rgba(59,109,17,0.12)' : 'var(--bg2)'};border:1.5px solid ${f.esHoy ? '#3B6D11' : 'var(--border)'};border-radius:12px;padding:14px;margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;color:${f.esHoy ? '#A8F04D' : 'var(--text)'}">
-          ${f.esHoy ? '● HOY — ' : ''}${f.dia}
-        </span>
-        <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:#A8F04D">${formatCOP(f.venta)}</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">
-        <div style="text-align:center">
-          <p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">Órdenes</p>
-          <p style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text)">${f.uniq}</p>
-        </div>
-        <div style="text-align:center">
-          <p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">Entregadas</p>
-          <p style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#639922">${f.entregadas}</p>
-        </div>
-        <div style="text-align:center">
-          <p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">T. prom.</p>
-          <p style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#FFB703">${f.tProm !== null ? f.tProm + ' min' : '—'}</p>
-        </div>
-      </div>
-      <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">
-        <div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#A8F04D,#06A77D);width:${Math.round((f.venta/maxVenta)*100)}%"></div>
-      </div>
-    </div>`).join('');
+  wrap.innerHTML = filas.map(function(f) {
+    const esHoyStyle = f.esHoy
+      ? 'background:rgba(59,109,17,0.12);border:1.5px solid #3B6D11;'
+      : 'background:var(--bg2);border:1.5px solid var(--border);';
+    const labelColor = f.esHoy ? '#A8F04D' : 'var(--text)';
+    const label = (f.esHoy ? '● HOY — ' : '') + f.dia;
+    const tPromStr = f.tProm !== null ? f.tProm + ' min' : '—';
+    const barW = Math.round((f.venta/maxVenta)*100);
+    return '<div style="' + esHoyStyle + 'border-radius:12px;padding:14px;margin-bottom:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      + '<span style="font-family:Space Grotesk,sans-serif;font-size:14px;font-weight:700;color:' + labelColor + '">' + label + '</span>'
+      + '<span style="font-family:Space Grotesk,sans-serif;font-size:16px;font-weight:700;color:#A8F04D">' + formatCOP(f.venta) + '</span>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
+      + '<div style="text-align:center"><p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">Órdenes</p>'
+      + '<p style="font-family:Space Grotesk,sans-serif;font-size:18px;font-weight:700;color:var(--text)">' + f.uniq + '</p></div>'
+      + '<div style="text-align:center"><p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">Entregadas</p>'
+      + '<p style="font-family:Space Grotesk,sans-serif;font-size:18px;font-weight:700;color:#639922">' + f.entregadas + '</p></div>'
+      + '<div style="text-align:center"><p style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">T. prom.</p>'
+      + '<p style="font-family:Space Grotesk,sans-serif;font-size:18px;font-weight:700;color:#FFB703">' + tPromStr + '</p></div>'
+      + '</div>'
+      + '<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden">'
+      + '<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#A8F04D,#06A77D);width:' + barW + '%"></div>'
+      + '</div></div>';
+  }).join('');
 
   // Total acumulado del evento
   const totalEvento = filas.reduce((s,f) => s + f.venta, 0);
@@ -3237,16 +3214,17 @@ function renderDashboard(dataA, dataB) {
   const wrapR = document.getElementById('g-ranking');
   wrapR.innerHTML = ranking.length === 0
     ? '<p style="color:var(--text3);font-size:13px">Sin datos aún</p>'
-    : ranking.map(([nombre,qty],i) => `
-      <div class="bar-row">
-        <div class="bar-meta">
-          <span class="bar-name">${nombre}</span>
-          <span class="bar-count">${qty}</span>
-        </div>
-        <div class="bar-track">
-          <div class="bar-fill${i<3?'':' blue'}" style="width:${Math.round((qty/maxVal)*100)}%"></div>
-        </div>
-      </div>`).join('');
+    : ranking.map(function([nombre,qty],i) {
+      const w = Math.round((qty/maxVal)*100);
+      const cls = i < 3 ? '' : ' blue';
+      return '<div class="bar-row">'
+        + '<div class="bar-meta">'
+        + '<span class="bar-name">' + nombre + '</span>'
+        + '<span class="bar-count">' + qty + '</span></div>'
+        + '<div class="bar-track">'
+        + '<div class="bar-fill' + cls + '" style="width:' + w + '%"></div>'
+        + '</div></div>';
+    }).join('');
 
   // Tiempo promedio por artículo (solo entregadas)
   const tiemposPorArt = {};
@@ -3265,16 +3243,16 @@ function renderDashboard(dataA, dataB) {
   const wrapT = document.getElementById('g-tiempos-art');
   wrapT.innerHTML = tiemposRanking.length === 0
     ? '<p style="color:var(--text3);font-size:13px">Sin datos aún — requiere órdenes entregadas</p>'
-    : tiemposRanking.map(([nombre, mins]) => `
-      <div class="bar-row">
-        <div class="bar-meta">
-          <span class="bar-name">${nombre}</span>
-          <span class="bar-count">${mins} min</span>
-        </div>
-        <div class="bar-track">
-          <div class="bar-fill blue" style="width:${Math.round((mins/maxT)*100)}%"></div>
-        </div>
-      </div>`).join('');
+    : tiemposRanking.map(function([nombre, mins]) {
+      const w = Math.round((mins/maxT)*100);
+      return '<div class="bar-row">'
+        + '<div class="bar-meta">'
+        + '<span class="bar-name">' + nombre + '</span>'
+        + '<span class="bar-count">' + mins + ' min</span></div>'
+        + '<div class="bar-track">'
+        + '<div class="bar-fill blue" style="width:' + w + '%"></div>'
+        + '</div></div>';
+    }).join('');
 
   // ── VENTAS ──
   // Calcular sobre órdenes entregadas + en prep (ya están en producción)
@@ -3308,21 +3286,22 @@ function renderDashboard(dataA, dataB) {
   if (wrapV) {
     wrapV.innerHTML = rankingVentas.length === 0
       ? '<p style="color:var(--text3);font-size:13px">Sin datos aún</p>'
-      : rankingVentas.map(([nombre, venta]) => `
-        <div class="bar-row">
-          <div class="bar-meta">
-            <span class="bar-name">${nombre}</span>
-            <span class="bar-count">${formatCOP(venta)}</span>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill" style="width:${Math.round((venta/maxVenta)*100)}%"></div>
-          </div>
-        </div>`).join('');
+      : rankingVentas.map(function([nombre, venta]) {
+          const w = Math.round((venta/maxVenta)*100);
+          return '<div class="bar-row">'
+            + '<div class="bar-meta">'
+            + '<span class="bar-name">' + nombre + '</span>'
+            + '<span class="bar-count">' + formatCOP(venta) + '</span>'
+            + '</div>'
+            + '<div class="bar-track">'
+            + '<div class="bar-fill" style="width:' + w + '%"></div>'
+            + '</div></div>';
+        }).join('');
   }
 
   // Timestamp
   const hn = new Date();
-  setText('ger-timestamp', `Actualizado: ${hn.getHours().toString().padStart(2,'0')}:${hn.getMinutes().toString().padStart(2,'0')}:${hn.getSeconds().toString().padStart(2,'0')}`);
+  setText('ger-timestamp', 'Actualizado: '+ hn.getHours().toString().padStart(2,'0')+ ':' + hn.getMinutes().toString().padStart(2,'0')+ ':' + hn.getSeconds().toString().padStart(2,'0'));
 }
 
 function setText(id, val) {
