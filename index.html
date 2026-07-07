@@ -1561,6 +1561,7 @@ let todasOrdenes = {};
 let gerenciaListenerA = null;
 let gerenciaListenerB = null;
 let _gerenciaOrdenesListener = null;  // listener global /ordenes
+let _gerenciaDataLoaded = false;
 let _localCounter = null;
 let _tickInterval = null;
 let _prevPendingKeys = new Set();
@@ -2390,7 +2391,6 @@ function cancelarOrden(key, numComanda) {
 let _horasDataCache = {};      // cache de todos los días para venta por horas
 let _horasDiaSeleccionado = null;
 
-let _gerenciaDataLoaded = false;
 
 function initGerencia() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
