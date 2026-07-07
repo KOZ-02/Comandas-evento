@@ -1438,7 +1438,7 @@
         Basado en el último reporte cargado. Selecciona el día a analizar.
       </p>
       <div class="horas-selector" id="icg-day-selector"></div>
-      <div id="icg-no-data" style="display:none;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px">
+      <div id="icg-no-data" style="display:block;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px">
         Sin reporte ICG cargado. Ve a "Venta General" y sube el archivo.
       </div>
       <div id="icg-horas-content" style="display:none">
@@ -2034,21 +2034,37 @@ function cambiarTabGerencia(tab, el) {
 // ── ICG x Hora ──
 
 function cargarICGxHora() {
+  // Mostrar estado de carga mientras lee Firebase
+  const noData  = document.getElementById('icg-no-data');
+  const content = document.getElementById('icg-horas-content');
+  const selector = document.getElementById('icg-day-selector');
+  if (noData)   noData.style.display = 'none';
+  if (content)  content.style.display = 'none';
+  if (selector) selector.innerHTML = '<p style="color:var(--text3);font-size:12px">Cargando...</p>';
+
   db.ref('venta_general').once('value').then(snap => {
     const data = snap.val();
+    console.log('ICG data keys:', data ? Object.keys(data) : 'null');
+
     if (!data || !data.porDia) {
-      document.getElementById('icg-no-data').style.display = 'block';
-      document.getElementById('icg-horas-content').style.display = 'none';
-      document.getElementById('icg-comparativo').innerHTML =
-        '<p style="color:var(--text3);font-size:13px">Sin datos ICG disponibles.</p>';
+      if (noData)  noData.style.display = 'block';
+      if (content) content.style.display = 'none';
+      if (selector) selector.innerHTML = '';
+      const comp = document.getElementById('icg-comparativo');
+      if (comp) comp.innerHTML = '<p style="color:var(--text3);font-size:13px">Sin datos ICG. Carga el reporte en "Venta General".</p>';
       return;
     }
+
     _icgData = data;
     const dias = Object.keys(data.porDia).sort().reverse();
+    console.log('ICG días disponibles:', dias);
     _icgDiaSeleccionado = _icgDiaSeleccionado || dias[0];
     renderSelectorICG(dias);
     renderICGxHora(_icgDiaSeleccionado);
     renderComparativo();
+  }).catch(err => {
+    console.error('Error ICG:', err);
+    if (noData) { noData.style.display = 'block'; noData.textContent = 'Error al cargar datos: ' + err.message; }
   });
 }
 
