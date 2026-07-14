@@ -1736,6 +1736,28 @@
       <div id="recon-prod" style="border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden"></div>
     </div>
 
+    <div class="ger-section" id="recon-familias-sec" style="display:none">
+      <p class="ger-title">Venta real por familia — ICG</p>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:12px">
+        Unidades y venta neta por categoría según las cajas del evento.
+      </p>
+      <div class="familia-grid" id="recon-familias-grid"></div>
+    </div>
+
+    <div class="ger-section" id="recon-periodo-sec" style="display:none">
+      <p class="ger-title">Comparativo por período — Venta real ICG</p>
+      <div class="periodo-tabs">
+        <button class="periodo-pill active" onclick="cambiarPeriodoICG('meses',this)">Meses</button>
+        <button class="periodo-pill" onclick="cambiarPeriodoICG('semanas',this)">Semanas</button>
+      </div>
+      <div class="comp-resumen-grid" id="recon-comp-resumen"></div>
+      <div class="comp-legend">
+        <span><i class="comp-dot" style="background:#185FA5"></i> Junio</span>
+        <span><i class="comp-dot" style="background:#FFB703"></i> Julio</span>
+      </div>
+      <div class="comp-bar-grid" id="recon-comp-barras"></div>
+    </div>
+
   </div>
   </div>
 
@@ -2339,6 +2361,182 @@ function cambiarTabGerencia(tab, el) {
 }
 
 // ══════════════════════════════════════════════════════
+// FAMILIAS ICG (venta real)
+// ══════════════════════════════════════════════════════
+let _icgDataGlobal = null;
+let _periodoICGActivo = 'meses';
+
+// Mapa ICG nombre sanitizado → familia
+const FAMILIA_ICG = {
+  'PERRO CL SLOPPY JOE X UND':  'Perros',
+  'PERRO CL MEXICANO X UND':    'Perros',
+  'CHORIPAN X UND':             'Perros',
+  'PAPAS F. CARNE MUNDIAL XUND':'Papas',
+  'PAPAS F. SENCILLAS X UND':   'Papas',
+  'PAPAS F. TOCINETA X UND':    'Papas',
+  'NACHOS CARNE X UND':         'Nachos',
+  'NACHOS POLLO X UND':         'Nachos',
+  'NACHOS SENCILLOS X UND':     'Nachos',
+  'BATIDO YOX FRESA X UND':     'Batidos',
+  'BATIDO YOX PIÑA X UND':      'Batidos',
+  'BATIDO YOX MANGO X UND':     'Batidos',
+  'COCA COLA 10OZ':             'Bebidas',
+  'COCA COLA ZERO 10OZ':        'Bebidas',
+};
+
+const FAMILIA_META = {
+  'Perros':  { cls:'fc-perros'  },
+  'Papas':   { cls:'fc-papas'   },
+  'Nachos':  { cls:'fc-nachos'  },
+  'Batidos': { cls:'fc-batidos' },
+  'Bebidas': { cls:'fc-bebidas' },
+};
+
+function renderFamiliasICG(icg) {
+  const sec  = document.getElementById('recon-familias-sec');
+  const wrap = document.getElementById('recon-familias-grid');
+  if (!sec || !wrap || !icg.porProducto) return;
+  sec.style.display = 'block';
+
+  // Acumular por familia
+  const famData = {};
+  Object.entries(FAMILIA_ICG).forEach(function([icgNombre, familia]) {
+    const key = sanitizeKey(icgNombre);
+    const prod = icg.porProducto[key];
+    if (!prod) return;
+    if (!famData[familia]) famData[familia] = { uds: 0, venta: 0, top: null, topUds: 0 };
+    famData[familia].uds   += Math.round(prod.uds || 0);
+    famData[familia].venta += prod.venta || 0;
+    if ((prod.uds||0) > famData[familia].topUds) {
+      famData[familia].topUds = prod.uds;
+      famData[familia].top    = icgNombre;
+    }
+  });
+
+  wrap.innerHTML = Object.keys(FAMILIA_META).map(function(nombre) {
+    const d   = famData[nombre] || { uds: 0, venta: 0, top: null };
+    const cls = FAMILIA_META[nombre].cls;
+    return '<div class="familia-card ' + cls + '">'
+      + '<p class="familia-name">' + nombre + ' <span style="font-size:9px;color:var(--text3)">(ICG real)</span></p>'
+      + '<p class="familia-uds">' + d.uds + '<span style="font-size:14px;color:var(--text3)"> uds</span></p>'
+      + '<p class="familia-venta">' + formatCOP(d.venta) + '</p>'
+      + (d.top ? '<p class="familia-top">⭐ <span>' + d.top + '</span></p>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function cambiarPeriodoICG(tipo, el) {
+  _periodoICGActivo = tipo;
+  document.querySelectorAll('#recon-periodo-sec .periodo-pill').forEach(function(b){ b.classList.remove('active'); });
+  el.classList.add('active');
+  if (_icgDataGlobal) renderComparativoPeriodoICG(_icgDataGlobal);
+}
+
+function renderComparativoPeriodoICG(icg) {
+  const sec     = document.getElementById('recon-periodo-sec');
+  const resWrap = document.getElementById('recon-comp-resumen');
+  const barWrap = document.getElementById('recon-comp-barras');
+  if (!sec || !resWrap || !barWrap || !icg.porDia) return;
+  sec.style.display = 'block';
+
+  // Construir ventaPorDia desde icg.porDia
+  const ventaPorDia = {};
+  Object.keys(icg.porDia).forEach(function(dia) {
+    ventaPorDia[dia] = icg.porDia[dia].ventaNeta || 0;
+  });
+
+  if (_periodoICGActivo === 'meses') {
+    renderComparativoMesesICG(ventaPorDia, resWrap, barWrap);
+  } else {
+    renderComparativoSemanasICG(ventaPorDia, resWrap, barWrap);
+  }
+}
+
+function renderComparativoMesesICG(ventaPorDia, resWrap, barWrap) {
+  const meses = {};
+  Object.keys(ventaPorDia).forEach(function(dia) {
+    const mes = dia.slice(0,7);
+    if (!meses[mes]) meses[mes] = { venta: 0, dias: 0 };
+    meses[mes].venta += ventaPorDia[dia];
+    meses[mes].dias++;
+  });
+
+  const keys = Object.keys(meses).sort();
+  const NOMBRES  = { '2026-06':'Junio', '2026-07':'Julio' };
+  const COLORES  = { '2026-06':'#185FA5', '2026-07':'#FFB703' };
+  const maxVenta = Math.max(...keys.map(function(k){ return meses[k].venta; }), 1);
+
+  resWrap.innerHTML = keys.map(function(k) {
+    const m = meses[k];
+    const promDia = m.dias > 0 ? m.venta / m.dias : 0;
+    return '<div class="comp-mes-card">'
+      + '<p class="comp-mes-label" style="color:' + (COLORES[k]||'var(--text3)') + '">' + (NOMBRES[k]||k) + ' <span style="font-size:9px">(ICG)</span></p>'
+      + '<p class="comp-mes-val">' + formatCOP(m.venta) + '</p>'
+      + '<p class="comp-mes-sub">' + m.dias + ' días · ' + formatCOP(promDia) + '/día</p>'
+      + '</div>';
+  }).join('');
+
+  if (keys.length >= 2) {
+    const v0 = meses[keys[0]].venta, v1 = meses[keys[1]].venta;
+    const delta = v1 - v0;
+    const deltaPct = v0 > 0 ? Math.round((delta/v0)*100) : 0;
+    const color = delta >= 0 ? '#A8F04D' : '#E24B4A';
+    resWrap.innerHTML += '<div style="grid-column:span 2;background:var(--bg2);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:12px;color:var(--text3)">Variación ' + (NOMBRES[keys[0]]||keys[0]) + ' → ' + (NOMBRES[keys[1]]||keys[1]) + '</span>'
+      + '<span style="font-family:Space Grotesk,sans-serif;font-weight:700;color:' + color + '">'
+      + (delta>=0?'+':'') + formatCOP(delta) + ' (' + (deltaPct>=0?'+':'') + deltaPct + '%)</span>'
+      + '</div>';
+  }
+
+  barWrap.innerHTML = keys.map(function(k) {
+    const w = Math.round((meses[k].venta / maxVenta) * 100);
+    return '<div class="comp-bar-row">'
+      + '<span class="comp-bar-label">' + (NOMBRES[k]||k) + '</span>'
+      + '<div class="comp-bar-track" style="height:28px">'
+      + '<div style="position:absolute;left:0;top:0;height:100%;border-radius:4px;width:' + w + '%;background:linear-gradient(90deg,' + (COLORES[k]||'#666') + ',rgba(255,255,255,0.2));transition:width .5s"></div>'
+      + '</div>'
+      + '<span class="comp-bar-vals">' + formatCOP(meses[k].venta) + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function renderComparativoSemanasICG(ventaPorDia, resWrap, barWrap) {
+  const semanas = {};
+  Object.keys(ventaPorDia).sort().forEach(function(dia) {
+    const d = new Date(dia + 'T12:00:00');
+    const dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
+    const lunes = new Date(d); lunes.setDate(d.getDate() - dow);
+    const key = lunes.toISOString().slice(0,10);
+    if (!semanas[key]) semanas[key] = { venta: 0, dias: 0, mes: dia.slice(0,7) };
+    semanas[key].venta += ventaPorDia[dia];
+    semanas[key].dias++;
+  });
+
+  const keys = Object.keys(semanas).sort();
+  const maxV = Math.max(...keys.map(function(k){ return semanas[k].venta; }), 1);
+  const COLORES_MES  = { '2026-06':'#185FA5', '2026-07':'#FFB703' };
+  const NOMBRES_MES  = { '2026-06':'Jun', '2026-07':'Jul' };
+
+  resWrap.innerHTML = '<div style="grid-column:span 2;font-size:12px;color:var(--text3)">'
+    + 'Venta real ICG por semana — ' + keys.length + ' semanas</div>';
+
+  barWrap.innerHTML = keys.map(function(k, i) {
+    const sem   = semanas[k];
+    const w     = Math.round((sem.venta / maxV) * 100);
+    const color = COLORES_MES[sem.mes] || '#666';
+    const label = 'S' + (i+1) + ' ' + (NOMBRES_MES[sem.mes]||'') + ' ' + k.slice(5);
+    const prom  = sem.dias > 0 ? sem.venta / sem.dias : 0;
+    return '<div class="comp-bar-row">'
+      + '<span class="comp-bar-label" style="font-size:10px">' + label + '</span>'
+      + '<div class="comp-bar-track" style="height:24px">'
+      + '<div style="position:absolute;left:0;top:0;height:100%;border-radius:4px;width:' + w + '%;background:linear-gradient(90deg,' + color + ',rgba(255,255,255,0.2));transition:width .5s"></div>'
+      + '</div>'
+      + '<span class="comp-bar-vals" style="font-size:10px">' + formatCOP(prom) + '/día</span>'
+      + '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
 // FAMILIAS
 // ══════════════════════════════════════════════════════
 const FAMILIAS = {
@@ -2715,6 +2913,13 @@ function renderReconciliacion(icg) {
       }).join('')
     + '<div style="padding:10px 12px;font-size:11px;color:var(--text3)">'
     + '% = uds sistema / uds ICG. Dif. positiva = el sistema registró más que ICG.</div>';
+
+  // Familias ICG
+  renderFamiliasICG(icg);
+
+  // Comparativo por período ICG
+  _icgDataGlobal = icg;
+  renderComparativoPeriodoICG(icg);
 }
 
 // ── ICG x Hora ──
