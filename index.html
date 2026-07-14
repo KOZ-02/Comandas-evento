@@ -846,6 +846,48 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .dash-loading p { font-size: 13px; color: #7A8BA0; }
 
+  /* FAMILIAS */
+  .familia-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 4px; }
+  .familia-card {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px; position: relative; overflow: hidden;
+  }
+  .familia-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .fc-perros::before  { background: linear-gradient(90deg,#E24B4A,#FF8A8A); }
+  .fc-papas::before   { background: linear-gradient(90deg,#FFB703,#FFA500); }
+  .fc-nachos::before  { background: linear-gradient(90deg,#FF6B35,#FF9F7F); }
+  .fc-batidos::before { background: linear-gradient(90deg,#06A77D,#A8F04D); }
+  .fc-bebidas::before { background: linear-gradient(90deg,#185FA5,#378ADD); }
+  .familia-name { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:8px; }
+  .familia-uds  { font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:var(--text);line-height:1; }
+  .familia-venta{ font-size:12px;color:var(--text3);margin-top:3px; }
+  .familia-top  { font-size:11px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:1px solid var(--border); }
+  .familia-top span { color:var(--text);font-weight:600; }
+
+  /* COMPARATIVO MESES/SEMANAS */
+  .periodo-tabs { display:flex;gap:6px;margin-bottom:14px; }
+  .periodo-pill {
+    padding:6px 14px;border-radius:20px;border:1.5px solid var(--border2);
+    background:var(--bg2);font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;
+  }
+  .periodo-pill.active { background:#185FA5;color:#fff;border-color:#185FA5; }
+  .comp-bar-grid { display:flex;flex-direction:column;gap:8px; }
+  .comp-bar-row { display:grid;grid-template-columns:70px 1fr 80px;gap:8px;align-items:center; }
+  .comp-bar-label { font-size:11px;color:var(--text3);font-weight:600;white-space:nowrap; }
+  .comp-bar-track { height:20px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative; }
+  .comp-bar-fill-a { position:absolute;left:0;top:0;height:50%;border-radius:4px 4px 0 0;background:linear-gradient(90deg,#185FA5,#378ADD);transition:width .5s; }
+  .comp-bar-fill-b { position:absolute;left:0;bottom:0;height:50%;border-radius:0 0 4px 4px;background:linear-gradient(90deg,#FFB703,#FFA500);transition:width .5s; }
+  .comp-bar-vals { font-size:10px;color:var(--text3);font-family:'Space Grotesk',sans-serif; }
+  .comp-legend { display:flex;gap:12px;margin-bottom:10px;font-size:11px;color:var(--text3); }
+  .comp-legend span { display:flex;align-items:center;gap:5px; }
+  .comp-dot { width:8px;height:8px;border-radius:2px;display:inline-block; }
+  .comp-resumen-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px; }
+  .comp-mes-card { background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:12px; }
+  .comp-mes-label { font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-bottom:6px; }
+  .comp-mes-val { font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--text); }
+  .comp-mes-sub { font-size:11px;color:var(--text3);margin-top:3px; }
+  .comp-delta { font-size:12px;font-weight:700;margin-top:4px; }
+
   /* RECONCILIACIÓN REAL */
   .recon-hero {
     background: linear-gradient(135deg, #0d1a2a, #1a0d2a);
@@ -1446,6 +1488,27 @@
           <tbody id="horas-tabla-body"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Ventas por familia</p>
+      <div class="familia-grid" id="familias-grid">
+        <p style="color:var(--text3);font-size:13px;grid-column:span 2">Cargando...</p>
+      </div>
+    </div>
+
+    <div class="ger-section">
+      <p class="ger-title">Comparativo por período</p>
+      <div class="periodo-tabs">
+        <button class="periodo-pill active" onclick="cambiarPeriodo('meses',this)">Meses</button>
+        <button class="periodo-pill" onclick="cambiarPeriodo('semanas',this)">Semanas</button>
+      </div>
+      <div class="comp-resumen-grid" id="comp-resumen"></div>
+      <div class="comp-legend">
+        <span><i class="comp-dot" style="background:#185FA5"></i> Junio</span>
+        <span><i class="comp-dot" style="background:#FFB703"></i> Julio</span>
+      </div>
+      <div class="comp-bar-grid" id="comp-barras"></div>
     </div>
 
     <div class="ger-section">
@@ -2273,6 +2336,194 @@ function cambiarTabGerencia(tab, el) {
   if (tab === 'recon') setTimeout(cargarReconciliacion, 50);
   const reconPane = document.getElementById('ger-pane-recon');
   if (reconPane) reconPane.classList.toggle('active', tab === 'recon');
+}
+
+// ══════════════════════════════════════════════════════
+// FAMILIAS
+// ══════════════════════════════════════════════════════
+const FAMILIAS = {
+  'Perros':  { items: ['Perro Sloppy Joe','Perro Mexicano','Choripán'],   cls: 'fc-perros'  },
+  'Papas':   { items: ['Papas carne mundial','Papas sencillas','Papas tocineta'], cls: 'fc-papas' },
+  'Nachos':  { items: ['Nachos carne','Nachos pollo','Nachos sencillos'], cls: 'fc-nachos'  },
+  'Batidos': { items: ['Batido Yox Fresa','Batido Yox Piña','Batido Yox Mango'], cls: 'fc-batidos' },
+  'Bebidas': { items: ['Coca Cola 10oz','Coca Cola Zero 10oz','BBC Monserrate','BBC Cajicá','Stella','Club Colombia','Six Pack Corona'], cls: 'fc-bebidas' }
+};
+
+function renderFamilias(todosLosDias) {
+  const wrap = document.getElementById('familias-grid');
+  if (!wrap) return;
+
+  // Acumular uds y venta por item de todos los días
+  const conteo = {};
+  Object.values(todosLosDias).forEach(function(diaData) {
+    const all = [...Object.values(diaData['A']||{}), ...Object.values(diaData['B']||{})];
+    const seen = new Set();
+    all.forEach(function(o) {
+      if (seen.has(o.numComanda)) return;
+      seen.add(o.numComanda);
+      (o.items||[]).forEach(function(item) {
+        if (!conteo[item.nombre]) conteo[item.nombre] = { uds: 0, venta: 0 };
+        conteo[item.nombre].uds   += (item.qty||1);
+        conteo[item.nombre].venta += calcVentaOrden([item]) * (item.qty||1) / Math.max(item.qty||1,1);
+      });
+    });
+  });
+
+  // Calcular venta real por item
+  const ventaItem = {};
+  MENU.forEach(function(m) {
+    const c = conteo[m.nombre];
+    if (c) ventaItem[m.nombre] = { uds: c.uds, venta: m.precio * c.uds };
+  });
+
+  wrap.innerHTML = Object.entries(FAMILIAS).map(function([nombre, fam]) {
+    const totUds   = fam.items.reduce(function(s,n){ return s + ((ventaItem[n]&&ventaItem[n].uds)||0); }, 0);
+    const totVenta = fam.items.reduce(function(s,n){ return s + ((ventaItem[n]&&ventaItem[n].venta)||0); }, 0);
+    const top = fam.items
+      .map(function(n){ return { n, uds: (ventaItem[n]&&ventaItem[n].uds)||0 }; })
+      .sort(function(a,b){ return b.uds - a.uds; })[0];
+    return '<div class="familia-card ' + fam.cls + '">'
+      + '<p class="familia-name">' + nombre + '</p>'
+      + '<p class="familia-uds">' + totUds + '<span style="font-size:14px;color:var(--text3)"> uds</span></p>'
+      + '<p class="familia-venta">' + formatCOP(totVenta) + '</p>'
+      + (top && top.uds > 0
+          ? '<p class="familia-top">⭐ <span>' + top.n + '</span> · ' + top.uds + ' uds</p>'
+          : '')
+      + '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// COMPARATIVO POR PERÍODO
+// ══════════════════════════════════════════════════════
+let _periodoActivo = 'meses';
+
+function cambiarPeriodo(tipo, el) {
+  _periodoActivo = tipo;
+  document.querySelectorAll('.periodo-pill').forEach(function(b){ b.classList.remove('active'); });
+  el.classList.add('active');
+  renderComparativoPeriodo(_horasDataCache);
+}
+
+function renderComparativoPeriodo(todosLosDias) {
+  const resWrap  = document.getElementById('comp-resumen');
+  const barWrap  = document.getElementById('comp-barras');
+  if (!resWrap || !barWrap) return;
+
+  // Acumular venta y órdenes por día
+  const ventaPorDia = {};
+  const ordenesPorDia = {};
+  Object.keys(todosLosDias).sort().forEach(function(dia) {
+    const diaData = todosLosDias[dia] || {};
+    const all = [...Object.values(diaData['A']||{}), ...Object.values(diaData['B']||{})];
+    const seen = new Set();
+    let v = 0, o = 0;
+    all.forEach(function(ord) {
+      if (seen.has(ord.numComanda)) return;
+      seen.add(ord.numComanda);
+      v += calcVentaOrden(ord.items);
+      o++;
+    });
+    ventaPorDia[dia]   = v;
+    ordenesPorDia[dia] = o;
+  });
+
+  if (_periodoActivo === 'meses') {
+    renderComparativoMeses(ventaPorDia, ordenesPorDia, resWrap, barWrap);
+  } else {
+    renderComparativoSemanas(ventaPorDia, ordenesPorDia, resWrap, barWrap);
+  }
+}
+
+function agruparPorMes(ventaPorDia) {
+  const meses = {};
+  Object.keys(ventaPorDia).forEach(function(dia) {
+    const mes = dia.slice(0,7); // YYYY-MM
+    if (!meses[mes]) meses[mes] = { venta: 0, dias: 0 };
+    meses[mes].venta += ventaPorDia[dia];
+    meses[mes].dias++;
+  });
+  return meses;
+}
+
+function renderComparativoMeses(ventaPorDia, ordenesPorDia, resWrap, barWrap) {
+  const meses = agruparPorMes(ventaPorDia);
+  const keys  = Object.keys(meses).sort();
+  const NOMBRES = { '2026-06': 'Junio', '2026-07': 'Julio' };
+  const COLORES = { '2026-06': '#185FA5', '2026-07': '#FFB703' };
+  const maxVenta = Math.max(...keys.map(function(k){ return meses[k].venta; }), 1);
+
+  // Resumen cards
+  resWrap.innerHTML = keys.map(function(k) {
+    const m = meses[k];
+    const promDia = m.dias > 0 ? m.venta / m.dias : 0;
+    return '<div class="comp-mes-card">'
+      + '<p class="comp-mes-label" style="color:' + (COLORES[k]||'var(--text3)') + '">' + (NOMBRES[k]||k) + '</p>'
+      + '<p class="comp-mes-val">' + formatCOP(m.venta) + '</p>'
+      + '<p class="comp-mes-sub">' + m.dias + ' días · ' + formatCOP(promDia) + '/día</p>'
+      + '</div>';
+  }).join('');
+
+  // Delta si hay 2 meses
+  if (keys.length >= 2) {
+    const v0 = meses[keys[0]].venta, v1 = meses[keys[1]].venta;
+    const delta = v1 - v0;
+    const deltaPct = v0 > 0 ? Math.round((delta/v0)*100) : 0;
+    const color = delta >= 0 ? '#A8F04D' : '#E24B4A';
+    resWrap.innerHTML += '<div style="grid-column:span 2;background:var(--bg2);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:12px;color:var(--text3)">Variación ' + (NOMBRES[keys[0]]||keys[0]) + ' → ' + (NOMBRES[keys[1]]||keys[1]) + '</span>'
+      + '<span style="font-family:Space Grotesk,sans-serif;font-weight:700;color:' + color + '">'
+      + (delta>=0?'+':'') + formatCOP(delta) + ' (' + (deltaPct>=0?'+':'') + deltaPct + '%)</span>'
+      + '</div>';
+  }
+
+  // Barras por mes
+  barWrap.innerHTML = keys.map(function(k) {
+    const w = Math.round((meses[k].venta / maxVenta) * 100);
+    return '<div class="comp-bar-row">'
+      + '<span class="comp-bar-label">' + (NOMBRES[k]||k) + '</span>'
+      + '<div class="comp-bar-track" style="height:28px">'
+      + '<div style="position:absolute;left:0;top:0;height:100%;border-radius:4px;width:' + w + '%;background:linear-gradient(90deg,' + (COLORES[k]||'#666') + ',rgba(255,255,255,0.2));transition:width .5s"></div>'
+      + '</div>'
+      + '<span class="comp-bar-vals">' + formatCOP(meses[k].venta) + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function renderComparativoSemanas(ventaPorDia, ordenesPorDia, resWrap, barWrap) {
+  // Agrupar por semana ISO (lunes a domingo)
+  const semanas = {};
+  Object.keys(ventaPorDia).sort().forEach(function(dia) {
+    const d = new Date(dia + 'T12:00:00');
+    const dow = d.getDay() === 0 ? 6 : d.getDay() - 1; // 0=lun
+    const lunes = new Date(d); lunes.setDate(d.getDate() - dow);
+    const key = lunes.toISOString().slice(0,10);
+    if (!semanas[key]) semanas[key] = { venta: 0, dias: 0, mes: dia.slice(0,7) };
+    semanas[key].venta += ventaPorDia[dia];
+    semanas[key].dias++;
+  });
+
+  const keys = Object.keys(semanas).sort();
+  const maxV = Math.max(...keys.map(function(k){ return semanas[k].venta; }), 1);
+  const COLORES_MES = { '2026-06': '#185FA5', '2026-07': '#FFB703' };
+  const NOMBRES_MES = { '2026-06': 'Jun', '2026-07': 'Jul' };
+
+  resWrap.innerHTML = '<div style="grid-column:span 2;font-size:12px;color:var(--text3)">Venta por semana — ' + keys.length + ' semanas</div>';
+
+  barWrap.innerHTML = keys.map(function(k, i) {
+    const sem = semanas[k];
+    const w   = Math.round((sem.venta / maxV) * 100);
+    const color = COLORES_MES[sem.mes] || '#666';
+    const label = 'S' + (i+1) + ' ' + (NOMBRES_MES[sem.mes]||'') + ' ' + k.slice(5);
+    const promDia = sem.dias > 0 ? sem.venta / sem.dias : 0;
+    return '<div class="comp-bar-row">'
+      + '<span class="comp-bar-label" style="font-size:10px">' + label + '</span>'
+      + '<div class="comp-bar-track" style="height:24px">'
+      + '<div style="position:absolute;left:0;top:0;height:100%;border-radius:4px;width:' + w + '%;background:linear-gradient(90deg,' + color + ',rgba(255,255,255,0.2));transition:width .5s"></div>'
+      + '</div>'
+      + '<span class="comp-bar-vals" style="font-size:10px">' + formatCOP(promDia) + '/día</span>'
+      + '</div>';
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════
@@ -3168,6 +3419,8 @@ function initGerencia() {
       renderVentaPorHoras(_horasDiaSeleccionado || (dias.length ? dias[dias.length-1] : hoy));
       calcularProyeccion(dataA, dataB);
       verificarAlertaCaida(todosLosDias, hoy);
+      renderFamilias(todosLosDias);
+      renderComparativoPeriodo(todosLosDias);
     }).catch(err => {
       console.error('Error cargando gerencia:', err);
       ocultarLoadingDashboard();
