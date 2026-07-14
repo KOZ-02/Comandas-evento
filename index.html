@@ -2395,32 +2395,53 @@ const FAMILIA_META = {
 function renderFamiliasICG(icg) {
   const sec  = document.getElementById('recon-familias-sec');
   const wrap = document.getElementById('recon-familias-grid');
-  if (!sec || !wrap || !icg.porProducto) return;
+  if (!sec || !wrap) return;
   sec.style.display = 'block';
 
-  // Acumular por familia
+  // Usar porFamilia si existe (método SKU), sino calcular desde porProducto
+  const fuente = icg.porFamilia ? 'porFamilia' : 'porProducto';
+
   const famData = {};
-  Object.entries(FAMILIA_ICG).forEach(function([icgNombre, familia]) {
-    const key = sanitizeKey(icgNombre);
-    const prod = icg.porProducto[key];
-    if (!prod) return;
-    if (!famData[familia]) famData[familia] = { uds: 0, venta: 0, top: null, topUds: 0 };
-    famData[familia].uds   += Math.round(prod.uds || 0);
-    famData[familia].venta += prod.venta || 0;
-    if ((prod.uds||0) > famData[familia].topUds) {
-      famData[familia].topUds = prod.uds;
-      famData[familia].top    = icgNombre;
-    }
-  });
+  if (icg.porFamilia) {
+    // Método SKU — datos ya agrupados por familia
+    Object.keys(icg.porFamilia).forEach(function(nombre) {
+      famData[nombre] = {
+        uds:   icg.porFamilia[nombre].uds || 0,
+        venta: icg.porFamilia[nombre].venta || 0,
+        top:   icg.porFamilia[nombre].top || null
+      };
+    });
+  } else {
+    // Método caja (legado) — calcular desde porProducto
+    Object.entries(FAMILIA_ICG).forEach(function([icgNombre, familia]) {
+      const key  = sanitizeKey(icgNombre);
+      const prod = icg.porProducto && icg.porProducto[key];
+      if (!prod) return;
+      if (!famData[familia]) famData[familia] = { uds: 0, venta: 0, top: null, topUds: 0 };
+      famData[familia].uds   += Math.round(prod.uds || 0);
+      famData[familia].venta += prod.venta || 0;
+      if ((prod.uds||0) > (famData[familia].topUds||0)) {
+        famData[familia].topUds = prod.uds;
+        famData[familia].top    = icgNombre;
+      }
+    });
+  }
+
+  const metodoTag = icg.metodo === 'sku'
+    ? ' <span style="font-size:9px;color:#A8F04D">(SKU · toda tienda)</span>'
+    : ' <span style="font-size:9px;color:var(--text3)">(ICG real)</span>';
 
   wrap.innerHTML = Object.keys(FAMILIA_META).map(function(nombre) {
     const d   = famData[nombre] || { uds: 0, venta: 0, top: null };
     const cls = FAMILIA_META[nombre].cls;
+    const topLabel = d.top
+      ? '<p class="familia-top">⭐ <span>' + (d.top.length > 25 ? d.top.slice(0,25)+'…' : d.top) + '</span></p>'
+      : '';
     return '<div class="familia-card ' + cls + '">'
-      + '<p class="familia-name">' + nombre + ' <span style="font-size:9px;color:var(--text3)">(ICG real)</span></p>'
+      + '<p class="familia-name">' + nombre + metodoTag + '</p>'
       + '<p class="familia-uds">' + d.uds + '<span style="font-size:14px;color:var(--text3)"> uds</span></p>'
       + '<p class="familia-venta">' + formatCOP(d.venta) + '</p>'
-      + (d.top ? '<p class="familia-top">⭐ <span>' + d.top + '</span></p>' : '')
+      + topLabel
       + '</div>';
   }).join('');
 }
@@ -2834,9 +2855,10 @@ function renderReconciliacion(icg) {
     document.getElementById('recon-content').appendChild(el);
     return el;
   })();
+  const metodoStr = icg.metodo === 'sku' ? ' · Método: SKU toda tienda ✓' : ' · Método: filtro por caja';
   avisoEl.textContent = 'Comparando ' + diasComunes.length + ' días en común'
     + (diasSoloICG.length ? ' · ' + diasSoloICG.length + ' días en ICG sin comandas registradas' : '')
-    + ' · Rango ICG: ' + (icg.fechaMin||'—') + ' → ' + (icg.fechaMax||'—');
+    + ' · Rango ICG: ' + (icg.fechaMin||'—') + ' → ' + (icg.fechaMax||'—') + metodoStr;
 
   // Tabla por día — solo días comunes, orden desc
   const porDiaSec = document.getElementById('recon-por-dia-sec');
